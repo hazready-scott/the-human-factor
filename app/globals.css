@@ -3,28 +3,33 @@
 @tailwind utilities;
 
 /* ===== THE HUMAN FACTOR — Brand Identity Design System ===== */
+/* Bold Modern Tech: Electric Blues, Teals, Purples */
 
 :root {
   /* Primary Palette */
-  --navy: #1a2744;
-  --navy-light: #243354;
-  --navy-dark: #111b30;
-  --warmth: #e8956a;
-  --warmth-light: #f1a57e;
-  --warmth-dark: #d97740;
+  --color-primary: #0f172a;
+  --color-primary-light: #1e3a5f;
+  --color-blue: #3b82f6;
+  --color-blue-light: #60a5fa;
+  --color-teal: #06b6d4;
+  --color-teal-dark: #0891b2;
+  --color-purple: #8b5cf6;
+  --color-purple-light: #a78bfa;
 
   /* Neutrals */
-  --white: #ffffff;
-  --off-white: #f8f7f5;
-  --gray-100: #f1f0ed;
-  --gray-200: #e2e0db;
-  --gray-300: #c4c1ba;
-  --gray-400: #9b978e;
-  --gray-500: #6b6860;
-  --gray-600: #4a4840;
-  --text-primary: #1a2744;
-  --text-secondary: #4a4840;
-  --text-muted: #9b978e;
+  --color-white: #ffffff;
+  --color-cool-white: #f8fafc;
+  --color-cool-gray: #f1f5f9;
+  --color-light-gray: #e2e8f0;
+  --color-slate: #334155;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+
+  /* Functional */
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
 
   /* Spacing */
   --nav-height: 72px;
@@ -42,10 +47,15 @@ html {
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
-  color: var(--text-primary);
-  background-color: var(--white);
+  color: var(--color-text-primary);
+  background-color: var(--color-white);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: rgba(6, 182, 212, 0.2);
+  color: var(--color-primary);
 }
 
 /* ===== Section Utilities ===== */
@@ -58,73 +68,83 @@ body {
 }
 
 .section-title {
-  @apply text-3xl md:text-4xl font-bold mb-4 text-navy;
+  @apply text-3xl md:text-4xl font-bold mb-4;
+  color: var(--color-primary);
 }
 
 .section-subtitle {
-  @apply text-lg text-gray-500 max-w-2xl;
+  @apply text-lg max-w-2xl;
+  color: var(--color-text-secondary);
 }
 
-/* ===== Brand Accent Bar ===== */
-.accent-bar {
+/* ===== Brand Accent Bar / Divider ===== */
+.accent-bar,
+.divider {
   width: 48px;
   height: 4px;
-  background: var(--warmth);
+  background: var(--color-teal);
   border-radius: 2px;
+}
+
+/* ===== Eyebrow Text ===== */
+.eyebrow {
+  @apply text-xs font-semibold uppercase tracking-widest mb-3;
+  color: var(--color-teal);
 }
 
 /* ===== Card Styles ===== */
 .card {
-  @apply bg-white rounded-xl border border-gray-200 p-6 transition-all duration-300;
+  @apply bg-white rounded-xl border p-6 transition-all duration-300;
+  border-color: var(--color-light-gray);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .card:hover {
-  @apply shadow-lg border-gray-300 -translate-y-1;
+  @apply -translate-y-1;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.04);
+  border-color: #cbd5e1;
+}
+
+.card-accent {
+  border-left: 4px solid var(--color-teal);
 }
 
 /* ===== Button Styles ===== */
 .btn-primary {
   @apply inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-white transition-all duration-300;
-  background-color: var(--warmth);
+  background-color: var(--color-teal);
 }
 
 .btn-primary:hover {
-  background-color: var(--warmth-dark);
+  background-color: var(--color-teal-dark);
   @apply shadow-lg -translate-y-0.5;
 }
 
 .btn-secondary {
   @apply inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold transition-all duration-300 border-2;
-  color: var(--navy);
-  border-color: var(--navy);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .btn-secondary:hover {
-  background-color: var(--navy);
+  background-color: var(--color-primary);
   @apply text-white;
 }
 
-/* ===== Quiz-Specific ===== */
-.quiz-option {
-  @apply block w-full text-left p-4 rounded-lg border-2 border-gray-200 transition-all duration-200 cursor-pointer;
-}
-
-.quiz-option:hover {
-  @apply border-warmth-300 bg-warmth-50;
-}
-
-.quiz-option.selected {
-  @apply border-warmth bg-warmth-50 font-medium;
+/* ===== Hero Gradient ===== */
+.bg-hero-gradient {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 40%, #0c4a6e 100%);
 }
 
 /* ===== Progress Bar ===== */
 .progress-bar {
-  @apply h-2 rounded-full bg-gray-200 overflow-hidden;
+  @apply h-2 rounded-full overflow-hidden;
+  background-color: var(--color-light-gray);
 }
 
 .progress-fill {
   @apply h-full rounded-full transition-all duration-500 ease-out;
-  background: linear-gradient(90deg, var(--warmth), var(--warmth-light));
+  background: linear-gradient(90deg, var(--color-teal), var(--color-blue));
 }
 
 /* ===== Animations ===== */
@@ -156,4 +176,13 @@ body {
 
 .animate-slide-in {
   animation: slideIn 0.4s ease-out forwards;
+}
+
+/* ===== Glow Effects ===== */
+.glow-teal {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.15);
+}
+
+.glow-purple {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
 }

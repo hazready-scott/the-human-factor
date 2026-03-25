@@ -17,32 +17,43 @@ export default function Header() {
     <header
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100'
+          ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100'
           : 'bg-transparent'
       }`}
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between px-6 h-[72px]">
-        <Link href="/" className="text-xl font-bold text-navy">
-          The Human Factor
+        <Link href="/" className="flex flex-col">
+          <span className="text-xl font-bold" style={{ color: scrolled ? 'var(--color-primary)' : 'white' }}>
+            The Human Factor
+          </span>
+          <span className="text-[10px] uppercase tracking-widest" style={{ color: scrolled ? 'var(--color-text-muted)' : 'rgba(255,255,255,0.6)' }}>
+            AI Implementation Consulting
+          </span>
         </Link>
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-8">
           <Link
             href="/about"
-            className="text-sm font-medium text-gray-600 hover:text-navy transition-colors"
+            className={`text-sm font-medium transition-colors ${
+              scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
+            }`}
           >
             About
           </Link>
           <Link
             href="/assessment"
-            className="text-sm font-medium text-gray-600 hover:text-navy transition-colors"
+            className={`text-sm font-medium transition-colors ${
+              scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
+            }`}
           >
             AI Readiness Quiz
           </Link>
           <Link
             href="/contact"
-            className="text-sm font-medium text-gray-600 hover:text-navy transition-colors"
+            className={`text-sm font-medium transition-colors ${
+              scrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
+            }`}
           >
             Contact
           </Link>
@@ -58,9 +69,9 @@ export default function Header() {
           aria-label="Toggle menu"
         >
           <svg
-            className="w-6 h-6 text-navy"
+            className="w-6 h-6"
             fill="none"
-            stroke="currentColor"
+            stroke={scrolled ? '#0f172a' : 'white'}
             viewBox="0 0 24 24"
           >
             {menuOpen ? (
@@ -84,24 +95,24 @@ export default function Header() {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <nav className="md:hidden bg-white border-t border-gray-100 px-6 py-4 space-y-3">
+        <nav className="md:hidden bg-white border-t border-slate-100 px-6 py-4 space-y-3">
           <Link
             href="/about"
-            className="block text-sm font-medium text-gray-600"
+            className="block text-sm font-medium text-slate-600"
             onClick={() => setMenuOpen(false)}
           >
             About
           </Link>
           <Link
             href="/assessment"
-            className="block text-sm font-medium text-gray-600"
+            className="block text-sm font-medium text-slate-600"
             onClick={() => setMenuOpen(false)}
           >
             AI Readiness Quiz
           </Link>
           <Link
             href="/contact"
-            className="block text-sm font-medium text-gray-600"
+            className="block text-sm font-medium text-slate-600"
             onClick={() => setMenuOpen(false)}
           >
             Contact

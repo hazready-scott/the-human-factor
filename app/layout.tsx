@@ -7,13 +7,13 @@ import Footer from '@/components/Footer'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'The Human Factor | AI Readiness Consulting',
+  title: 'The Human Factor | AI Implementation Consulting',
   description:
-    'Helping organizations navigate AI adoption with human-centered strategies. Assess your AI readiness and build a future-proof workforce.',
+    'AI implementation consulting grounded in Human Factors and Systems Design Engineering. We help organizations implement AI that fits how people actually work.',
   openGraph: {
-    title: 'The Human Factor | AI Readiness Consulting',
+    title: 'The Human Factor | AI Implementation Consulting',
     description:
-      'Helping organizations navigate AI adoption with human-centered strategies.',
+      'AI implementation consulting grounded in Human Factors and Systems Design Engineering.',
     url: 'https://thehumanfactor.ca',
     siteName: 'The Human Factor',
     locale: 'en_CA',
