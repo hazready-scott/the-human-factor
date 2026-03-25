@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /* ===== THE HUMAN FACTOR — Brand Identity Design System ===== */
-/* Bold Modern Tech: Electric Blues, Teals, Purples */
+/* Dark Mode: Electric Blues, Teals, Purples on deep navy */
 
 :root {
   /* Primary Palette */
@@ -16,15 +16,14 @@
   --color-purple: #8b5cf6;
   --color-purple-light: #a78bfa;
 
-  /* Neutrals */
-  --color-white: #ffffff;
-  --color-cool-white: #f8fafc;
-  --color-cool-gray: #f1f5f9;
-  --color-light-gray: #e2e8f0;
-  --color-slate: #334155;
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-muted: #94a3b8;
+  /* Dark Neutrals */
+  --color-bg: #0b1120;
+  --color-bg-elevated: rgba(255, 255, 255, 0.04);
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-hover: rgba(255, 255, 255, 0.14);
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
 
   /* Functional */
   --color-success: #16a34a;
@@ -48,19 +47,34 @@ html {
 body {
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--color-text-primary);
-  background-color: var(--color-white);
+  background: linear-gradient(135deg, #0b1120 0%, #111827 40%, #0f172a 100%);
+  background-attachment: fixed;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
-  background-color: rgba(6, 182, 212, 0.2);
-  color: var(--color-primary);
+  background-color: rgba(6, 182, 212, 0.3);
+  color: white;
+}
+
+/* ===== Subtle Grid Overlay ===== */
+.site-grid::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* ===== Section Utilities ===== */
 .section-pad {
   @apply py-16 px-6 md:py-24 md:px-8;
+  position: relative;
 }
 
 .container-narrow {
@@ -69,7 +83,7 @@ body {
 
 .section-title {
   @apply text-3xl md:text-4xl font-bold mb-4;
-  color: var(--color-primary);
+  color: white;
 }
 
 .section-subtitle {
@@ -94,15 +108,16 @@ body {
 
 /* ===== Card Styles ===== */
 .card {
-  @apply bg-white rounded-xl border p-6 transition-all duration-300;
-  border-color: var(--color-light-gray);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.06);
+  @apply rounded-xl border p-6 transition-all duration-300;
+  background: var(--color-bg-elevated);
+  border-color: var(--color-border);
+  backdrop-filter: blur(12px);
 }
 
 .card:hover {
   @apply -translate-y-1;
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.04);
-  border-color: #cbd5e1;
+  border-color: var(--color-border-hover);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
 .card-accent {
@@ -118,28 +133,38 @@ body {
 .btn-primary:hover {
   background-color: var(--color-teal-dark);
   @apply shadow-lg -translate-y-0.5;
+  box-shadow: 0 8px 30px rgba(6, 182, 212, 0.25);
 }
 
 .btn-secondary {
   @apply inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold transition-all duration-300 border-2;
-  color: var(--color-primary);
-  border-color: var(--color-primary);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .btn-secondary:hover {
-  background-color: var(--color-primary);
-  @apply text-white;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 /* ===== Hero Gradient ===== */
 .bg-hero-gradient {
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 40%, #0c4a6e 100%);
+  background: linear-gradient(135deg, #0b1120 0%, #1e3a5f 40%, #0c4a6e 100%);
+}
+
+/* ===== Section Backgrounds ===== */
+.section-dark {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.section-elevated {
+  background: rgba(255, 255, 255, 0.02);
 }
 
 /* ===== Progress Bar ===== */
 .progress-bar {
   @apply h-2 rounded-full overflow-hidden;
-  background-color: var(--color-light-gray);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .progress-fill {
@@ -149,14 +174,8 @@ body {
 
 /* ===== Animations ===== */
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fade-in-up {
@@ -164,14 +183,8 @@ body {
 }
 
 @keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .animate-slide-in {
@@ -180,14 +193,14 @@ body {
 
 /* ===== Glow Effects ===== */
 .glow-teal {
-  box-shadow: 0 0 20px rgba(6, 182, 212, 0.15);
+  box-shadow: 0 0 30px rgba(6, 182, 212, 0.15);
 }
 
 .glow-purple {
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.15);
 }
 
-/* ===== Admin Dark Theme ===== */
+/* ===== Admin / Dark UI Components ===== */
 .admin-bg {
   background: linear-gradient(135deg, #0b1120 0%, #111827 40%, #0f172a 100%);
   min-height: 100vh;
@@ -256,3 +269,46 @@ body {
   background: rgba(255, 255, 255, 0.03);
   cursor: pointer;
 }
+
+/* ===== Tiptap Editor Dark ===== */
+.editor-dark-content .tiptap {
+  color: #e2e8f0;
+  min-height: 400px;
+  padding: 1rem;
+}
+
+.editor-dark-content .tiptap p.is-editor-empty:first-child::before {
+  color: #475569;
+}
+
+.editor-dark-content .tiptap h1,
+.editor-dark-content .tiptap h2,
+.editor-dark-content .tiptap h3 {
+  color: white;
+}
+
+.editor-dark-content .tiptap a {
+  color: #06b6d4;
+}
+
+.editor-dark-content .tiptap blockquote {
+  border-left-color: rgba(255, 255, 255, 0.15);
+  color: #94a3b8;
+}
+
+.editor-dark-content .tiptap code {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+}
+
+.editor-dark-content .tiptap pre {
+  background: rgba(0, 0, 0, 0.3);
+  color: #e2e8f0;
+}
+
+/* ===== Prose dark override for article content in editor ===== */
+.prose-invert h2, .prose-invert h3, .prose-invert h4 { color: white; }
+.prose-invert p, .prose-invert li { color: #cbd5e1; }
+.prose-invert a { color: #06b6d4; }
+.prose-invert blockquote { border-left-color: rgba(255,255,255,0.15); color: #94a3b8; }
+.prose-invert strong { color: white; }

@@ -30,7 +30,7 @@ export async function PATCH(
   const body = await request.json()
   const updates: Record<string, unknown> = {}
 
-  const fields = ['title', 'slug', 'content', 'excerpt', 'cover_image_url', 'author_name', 'status', 'tags', 'seo_title', 'seo_description', 'seo_keywords']
+  const fields = ['title', 'slug', 'content', 'excerpt', 'cover_image_url', 'cover_image_prompt', 'author_name', 'status', 'tags', 'seo_title', 'seo_description', 'seo_keywords']
   for (const field of fields) {
     if (body[field] !== undefined) updates[field] = body[field]
   }

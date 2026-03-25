@@ -18,14 +18,11 @@ export default async function ResourcesPage() {
 
   return (
     <>
-      <section className="pt-32 pb-12 px-6 bg-hero-gradient text-white">
+      <section className="pt-32 pb-12 px-6 text-white">
         <div className="max-w-4xl mx-auto text-center">
           <div className="accent-bar mx-auto mb-6" />
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Resources</h1>
-          <p className="text-lg text-slate-300 max-w-2xl mx-auto">
-            Practical insights on system improvement, AI integration, and building
-            organizations where people and technology work well together.
-          </p>
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">Practical insights on system improvement, AI integration, and building organizations where people and technology work well together.</p>
         </div>
       </section>
 
@@ -33,35 +30,29 @@ export default async function ResourcesPage() {
         <div className="max-w-6xl mx-auto">
           {!articles || articles.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-slate-400 text-lg">Articles coming soon.</p>
-              <p className="text-slate-400 text-sm mt-2">Check back for insights on system improvement and AI integration.</p>
+              <p className="text-slate-500 text-lg">Articles coming soon.</p>
+              <p className="text-slate-600 text-sm mt-2">Check back for insights on system improvement and AI integration.</p>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {articles.map((article) => (
                 <Link key={article.slug} href={`/resources/${article.slug}`} className="group">
-                  <div className="card h-full flex flex-col">
+                  <div className="card h-full flex flex-col p-0 overflow-hidden">
                     {article.cover_image_url ? (
-                      <img src={article.cover_image_url} alt="" className="w-full h-48 object-cover rounded-t-xl -mx-6 -mt-6 mb-4" style={{ width: 'calc(100% + 48px)' }} />
+                      <img src={article.cover_image_url} alt="" className="w-full h-48 object-cover" />
                     ) : (
-                      <div className="w-full h-48 bg-gradient-to-br from-[#0f172a] to-[#0c4a6e] rounded-t-xl -mx-6 -mt-6 mb-4" style={{ width: 'calc(100% + 48px)' }} />
+                      <div className="w-full h-48 bg-gradient-to-br from-[#0c4a6e] to-[#1e3a5f]" />
                     )}
-                    <div className="flex-1">
-                      <h2 className="text-lg font-bold text-[#0f172a] mb-2 group-hover:text-[#06b6d4] transition-colors">
-                        {article.title}
-                      </h2>
-                      {article.excerpt && (
-                        <p className="text-sm text-slate-500 line-clamp-3 mb-4">{article.excerpt}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
-                      <span className="text-xs text-slate-400">
-                        {article.published_at ? new Date(article.published_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ''}
-                      </span>
-                      <div className="flex gap-1">
-                        {article.tags?.slice(0, 2).map((tag: string) => (
-                          <span key={tag} className="text-xs px-2 py-0.5 bg-slate-100 rounded-full text-slate-500">{tag}</span>
-                        ))}
+                    <div className="p-6 flex-1 flex flex-col">
+                      <h2 className="text-lg font-bold text-white mb-2 group-hover:text-[#06b6d4] transition-colors">{article.title}</h2>
+                      {article.excerpt && <p className="text-sm text-slate-500 line-clamp-3 mb-4">{article.excerpt}</p>}
+                      <div className="flex items-center justify-between mt-auto pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                        <span className="text-xs text-slate-600">{article.published_at ? new Date(article.published_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ''}</span>
+                        <div className="flex gap-1">
+                          {article.tags?.slice(0, 2).map((tag: string) => (
+                            <span key={tag} className="text-xs px-2 py-0.5 rounded-full text-slate-500" style={{ background: 'rgba(255,255,255,0.06)' }}>{tag}</span>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>

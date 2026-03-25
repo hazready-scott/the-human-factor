@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
-  const { title, content, excerpt, cover_image_url, author_name, status: articleStatus, tags, seo_title, seo_description, seo_keywords } = body
+  const { title, content, excerpt, cover_image_url, cover_image_prompt, author_name, status: articleStatus, tags, seo_title, seo_description, seo_keywords } = body
 
   if (!title) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
 
@@ -45,6 +45,7 @@ export async function POST(request: Request) {
     content: content || '',
     excerpt: excerpt || null,
     cover_image_url: cover_image_url || null,
+    cover_image_prompt: cover_image_prompt || null,
     author_name: author_name || 'The Human Factor',
     status: articleStatus || 'draft',
     published_at: articleStatus === 'published' ? new Date().toISOString() : null,
