@@ -1,19 +1,17 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import Header from '@/components/Header'
-import Footer from '@/components/Footer'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'The Human Factor | AI Implementation Consulting',
+  title: 'The Human Factor | System Improvement & AI Integration',
   description:
-    'AI implementation consulting grounded in Human Factors and Systems Design Engineering. We help organizations implement AI that fits how people actually work.',
+    'System improvement, quality improvement, and AI integration grounded in Human Factors and Systems Design Engineering. We help organizations build better systems and safer outcomes.',
   openGraph: {
-    title: 'The Human Factor | AI Implementation Consulting',
+    title: 'The Human Factor | System Improvement & AI Integration',
     description:
-      'AI implementation consulting grounded in Human Factors and Systems Design Engineering.',
+      'System improvement, quality improvement, and AI integration grounded in Human Factors and Systems Design Engineering.',
     url: 'https://thehumanfactor.ca',
     siteName: 'The Human Factor',
     locale: 'en_CA',
@@ -28,11 +26,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <Header />
-        <main className="min-h-screen">{children}</main>
-        <Footer />
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }

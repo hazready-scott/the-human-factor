@@ -17,26 +17,17 @@ import {
   Cell,
 } from "recharts";
 
-// ─── Supabase Config ─────────────────────────────────────────────
-const SUPABASE_URL = "https://kicrsqbgjefqratvrqbv.supabase.co";
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpY3JzcWJnamVmcXJhdHZycWJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MTM3NTcsImV4cCI6MjA4OTk4OTc1N30.Lqt0-JsHY72qTs2bZYnhXRYnyH3MRu86BY5q3XenzP4";
-
-const submitToSupabase = async (data: Record<string, unknown>) => {
+// ─── API Submission ──────────────────────────────────────────────
+const submitToAPI = async (data: Record<string, unknown>) => {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/aria_assessments`, {
+    const res = await fetch("/api/quiz/submit", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        Prefer: "return=minimal",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     return res.ok;
   } catch (err) {
-    console.error("Supabase submission error:", err);
+    console.error("Quiz submission error:", err);
     return false;
   }
 };
@@ -1138,7 +1129,7 @@ export default function AIReadinessQuiz() {
 
     const params = new URLSearchParams(window.location?.search || "");
 
-    await submitToSupabase({
+    await submitToAPI({
       name,
       email,
       org_name: orgName || null,
