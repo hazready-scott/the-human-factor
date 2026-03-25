@@ -23,7 +23,7 @@ export default function AdminNav() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-[#0f172a] text-white flex flex-col z-40">
+    <aside className="fixed left-0 top-0 h-full w-64 text-white flex flex-col z-40" style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(16px)', borderRight: '1px solid rgba(255,255,255,0.06)' }}>
       <div className="p-6 border-b border-white/10">
         <h1 className="text-lg font-bold">The Human Factor</h1>
         <p className="text-[10px] uppercase tracking-widest text-slate-500 mt-1">Admin Portal</p>

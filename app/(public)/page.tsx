@@ -224,6 +224,13 @@ export default function Home() {
           </Link>
         </div>
       </section>
+
+      {/* Staff Sign In */}
+      <div className="text-center pb-6">
+        <Link href="/admin/login" className="text-xs text-slate-300 hover:text-slate-500 transition-colors">
+          Staff Sign In
+        </Link>
+      </div>
     </>
   )
 }

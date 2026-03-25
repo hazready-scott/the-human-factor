@@ -43,7 +43,7 @@ function slugify(text: string) {
 function ToolbarButton({ onClick, active, children, title }: { onClick: () => void; active?: boolean; children: React.ReactNode; title: string }) {
   return (
     <button type="button" onClick={onClick} title={title}
-      className={`p-2 rounded hover:bg-slate-100 transition-colors ${active ? 'bg-slate-200 text-[#06b6d4]' : 'text-slate-600'}`}>
+      className={`p-2 rounded transition-colors ${active ? 'bg-cyan-500/20 text-[#06b6d4]' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}>
       {children}
     </button>
   )
@@ -216,24 +216,25 @@ export default function ArticleEditor({ article: initial, mode }: { article?: Ar
   return (
     <div className="max-w-5xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-[#0f172a]">
+        <h1 className="text-2xl font-bold text-white">
           {mode === 'create' ? 'New Article' : 'Edit Article'}
         </h1>
         <div className="flex gap-3">
-          <button onClick={() => setShowPreview(!showPreview)} className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-sm hover:bg-slate-50">
+          <button onClick={() => setShowPreview(!showPreview)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-white transition-colors" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
             <Eye size={16} /> {showPreview ? 'Editor' : 'Preview'}
           </button>
           <div className="relative" ref={aiMenuRef}>
             <button
               onClick={() => setShowAiMenu(!showAiMenu)}
               disabled={aiLoading}
-              className="flex items-center gap-2 px-4 py-2 border border-purple-200 text-purple-600 rounded-lg text-sm hover:bg-purple-50 disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-purple-400 hover:text-purple-300 disabled:opacity-50 transition-colors"
+              style={{ border: '1px solid rgba(139,92,246,0.3)' }}
             >
               <Sparkles size={16} className={aiLoading ? 'animate-spin' : ''} />
               {aiLoading ? 'Generating...' : 'AI Assist'}
             </button>
             {showAiMenu && (
-              <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1">
+              <div className="absolute right-0 top-full mt-1 w-56 rounded-xl shadow-2xl z-50 py-1 border" style={{ background: '#1e293b', borderColor: 'rgba(255,255,255,0.1)' }}>
                 {[
                   { label: 'Draft from topic...', action: handleAiDraft, desc: 'Generate a full article' },
                   { label: 'Generate outline...', action: handleAiOutline, desc: 'Create article structure' },
@@ -244,17 +245,17 @@ export default function ArticleEditor({ article: initial, mode }: { article?: Ar
                   <button
                     key={item.label}
                     onClick={item.action}
-                    className="w-full text-left px-4 py-2.5 hover:bg-purple-50 transition-colors"
+                    className="w-full text-left px-4 py-2.5 hover:bg-white/5 transition-colors"
                   >
-                    <div className="text-sm font-medium text-[#0f172a]">{item.label}</div>
-                    <div className="text-xs text-slate-400">{item.desc}</div>
+                    <div className="text-sm font-medium text-slate-200">{item.label}</div>
+                    <div className="text-xs text-slate-500">{item.desc}</div>
                   </button>
                 ))}
               </div>
             )}
           </div>
           {mode === 'edit' && (
-            <button onClick={handleDelete} className="flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50">
+            <button onClick={handleDelete} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors" style={{ border: '1px solid rgba(239,68,68,0.2)' }}>
               <Trash2 size={16} /> Delete
             </button>
           )}
@@ -268,38 +269,38 @@ export default function ArticleEditor({ article: initial, mode }: { article?: Ar
         {/* Main Editor */}
         <div className="lg:col-span-2 space-y-4">
           <input value={article.title} onChange={e => handleTitleChange(e.target.value)} placeholder="Article title"
-            className="w-full px-4 py-3 text-2xl font-bold border border-slate-200 rounded-lg focus:outline-none focus:border-cyan-500" />
+            className="admin-input text-2xl font-bold" />
 
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <span>Slug:</span>
             <input value={article.slug} onChange={e => setArticle(prev => ({ ...prev, slug: e.target.value }))}
-              className="flex-1 px-2 py-1 border border-slate-200 rounded text-sm focus:outline-none focus:border-cyan-500" />
+              className="admin-input flex-1 py-1 text-sm" />
           </div>
 
           {showPreview ? (
-            <div className="bg-white border border-slate-200 rounded-xl p-6">
+            <div className="bg-white rounded-xl p-6">
               <div className="prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: article.content }} />
             </div>
           ) : (
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
               {/* Toolbar */}
-              <div className="flex flex-wrap gap-0.5 p-2 border-b border-slate-200 bg-slate-50">
+              <div className="flex flex-wrap gap-0.5 p-2 border-b" style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)' }}>
                 <ToolbarButton onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive('bold')} title="Bold"><Bold size={16} /></ToolbarButton>
                 <ToolbarButton onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')} title="Italic"><Italic size={16} /></ToolbarButton>
                 <ToolbarButton onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive('underline')} title="Underline"><UnderlineIcon size={16} /></ToolbarButton>
-                <div className="w-px bg-slate-200 mx-1" />
+                <div className="w-px mx-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
                 <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive('heading', { level: 1 })} title="Heading 1"><Heading1 size={16} /></ToolbarButton>
                 <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive('heading', { level: 2 })} title="Heading 2"><Heading2 size={16} /></ToolbarButton>
                 <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive('heading', { level: 3 })} title="Heading 3"><Heading3 size={16} /></ToolbarButton>
-                <div className="w-px bg-slate-200 mx-1" />
+                <div className="w-px mx-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
                 <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive('bulletList')} title="Bullet List"><List size={16} /></ToolbarButton>
                 <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')} title="Numbered List"><ListOrdered size={16} /></ToolbarButton>
                 <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive('blockquote')} title="Quote"><Quote size={16} /></ToolbarButton>
                 <ToolbarButton onClick={() => editor.chain().focus().toggleCodeBlock().run()} active={editor.isActive('codeBlock')} title="Code"><Code size={16} /></ToolbarButton>
-                <div className="w-px bg-slate-200 mx-1" />
+                <div className="w-px mx-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
                 <ToolbarButton onClick={setLink} active={editor.isActive('link')} title="Link"><LinkIcon size={16} /></ToolbarButton>
                 <ToolbarButton onClick={addImage} title="Image"><ImageIcon size={16} /></ToolbarButton>
-                <div className="w-px bg-slate-200 mx-1" />
+                <div className="w-px mx-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
                 <ToolbarButton onClick={() => editor.chain().focus().setTextAlign('left').run()} active={editor.isActive({ textAlign: 'left' })} title="Align Left"><AlignLeft size={16} /></ToolbarButton>
                 <ToolbarButton onClick={() => editor.chain().focus().setTextAlign('center').run()} active={editor.isActive({ textAlign: 'center' })} title="Align Center"><AlignCenter size={16} /></ToolbarButton>
                 <ToolbarButton onClick={() => editor.chain().focus().setTextAlign('right').run()} active={editor.isActive({ textAlign: 'right' })} title="Align Right"><AlignRight size={16} /></ToolbarButton>
@@ -310,60 +311,62 @@ export default function ArticleEditor({ article: initial, mode }: { article?: Ar
 
           <textarea value={article.excerpt} onChange={e => setArticle(prev => ({ ...prev, excerpt: e.target.value }))}
             placeholder="Article excerpt (shown on cards)" rows={3}
-            className="w-full px-4 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-cyan-500 resize-none" />
+            className="admin-input resize-none" />
         </div>
 
         {/* Sidebar */}
         <div className="space-y-4">
           {/* Status */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <h3 className="font-semibold text-[#0f172a] mb-3">Publish</h3>
+          <div className="admin-card p-4">
+            <h3 className="font-semibold text-white mb-3">Publish</h3>
             <div className="flex gap-2">
               <button onClick={() => setArticle(prev => ({ ...prev, status: 'draft' }))}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${article.status === 'draft' ? 'bg-yellow-100 text-yellow-700' : 'bg-slate-50 text-slate-500'}`}>
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${article.status === 'draft' ? 'bg-yellow-500/20 text-yellow-300' : 'text-slate-500'}`}
+                style={article.status !== 'draft' ? { background: 'rgba(255,255,255,0.03)' } : {}}>
                 Draft
               </button>
               <button onClick={() => setArticle(prev => ({ ...prev, status: 'published' }))}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${article.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-slate-50 text-slate-500'}`}>
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${article.status === 'published' ? 'bg-green-500/20 text-green-300' : 'text-slate-500'}`}
+                style={article.status !== 'published' ? { background: 'rgba(255,255,255,0.03)' } : {}}>
                 Published
               </button>
             </div>
           </div>
 
           {/* Cover Image */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <h3 className="font-semibold text-[#0f172a] mb-3">Cover Image</h3>
+          <div className="admin-card p-4">
+            <h3 className="font-semibold text-white mb-3">Cover Image</h3>
             <input value={article.cover_image_url} onChange={e => setArticle(prev => ({ ...prev, cover_image_url: e.target.value }))}
-              placeholder="Image URL" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+              placeholder="Image URL" className="admin-input text-sm" />
             {article.cover_image_url && (
               <img src={article.cover_image_url} alt="" className="mt-2 rounded-lg w-full h-32 object-cover" />
             )}
           </div>
 
           {/* Tags */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <h3 className="font-semibold text-[#0f172a] mb-3">Tags</h3>
+          <div className="admin-card p-4">
+            <h3 className="font-semibold text-white mb-3">Tags</h3>
             <input value={tagsInput} onChange={e => setTagsInput(e.target.value)}
-              placeholder="Comma-separated tags" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+              placeholder="Comma-separated tags" className="admin-input text-sm" />
           </div>
 
           {/* Author */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <h3 className="font-semibold text-[#0f172a] mb-3">Author</h3>
+          <div className="admin-card p-4">
+            <h3 className="font-semibold text-white mb-3">Author</h3>
             <input value={article.author_name} onChange={e => setArticle(prev => ({ ...prev, author_name: e.target.value }))}
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+              className="admin-input text-sm" />
           </div>
 
           {/* SEO */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <h3 className="font-semibold text-[#0f172a] mb-3">SEO</h3>
+          <div className="admin-card p-4">
+            <h3 className="font-semibold text-white mb-3">SEO</h3>
             <div className="space-y-3">
               <input value={article.seo_title} onChange={e => setArticle(prev => ({ ...prev, seo_title: e.target.value }))}
-                placeholder="SEO Title" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+                placeholder="SEO Title" className="admin-input text-sm" />
               <textarea value={article.seo_description} onChange={e => setArticle(prev => ({ ...prev, seo_description: e.target.value }))}
-                placeholder="SEO Description" rows={3} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none" />
+                placeholder="SEO Description" rows={3} className="admin-input text-sm resize-none" />
               <input value={article.seo_keywords} onChange={e => setArticle(prev => ({ ...prev, seo_keywords: e.target.value }))}
-                placeholder="SEO Keywords" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" />
+                placeholder="SEO Keywords" className="admin-input text-sm" />
             </div>
           </div>
         </div>

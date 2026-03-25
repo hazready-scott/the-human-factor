@@ -30,40 +30,40 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+    <div className="admin-bg flex items-center justify-center px-4">
+      <div className="w-full max-w-sm relative z-10">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-[#0f172a]">The Human Factor</h1>
-          <p className="text-xs uppercase tracking-widest text-slate-400 mt-1">Admin Portal</p>
+          <h1 className="text-2xl font-bold text-white">The Human Factor</h1>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-slate-500 mt-2">Admin Portal</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 space-y-5">
+        <form onSubmit={handleSubmit} className="admin-card p-8 space-y-5">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium text-slate-400 mb-1">Email</label>
             <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm"
+              className="admin-input"
               placeholder="admin@thehumanfactor.ca"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+            <label htmlFor="password" className="block text-sm font-medium text-slate-400 mb-1">Password</label>
             <input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm"
+              className="admin-input"
             />
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-400">{error}</p>}
 
           <button
             type="submit"
