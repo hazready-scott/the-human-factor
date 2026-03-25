@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -55,6 +55,91 @@ export default function ArticleEditor({ article: initial, mode }: { article?: Ar
   const [saving, setSaving] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [tagsInput, setTagsInput] = useState(article.tags.join(', '))
+  const [aiLoading, setAiLoading] = useState(false)
+  const [showAiMenu, setShowAiMenu] = useState(false)
+  const aiMenuRef = useRef<HTMLDivElement>(null)
+
+  // Close AI menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (aiMenuRef.current && !aiMenuRef.current.contains(e.target as Node)) setShowAiMenu(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const callAI = async (action: string, context: Record<string, string>) => {
+    setAiLoading(true)
+    setShowAiMenu(false)
+    try {
+      const res = await fetch('/api/admin/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, context }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.error || 'AI generation failed')
+        return null
+      }
+      return await res.json()
+    } catch {
+      alert('AI generation failed')
+      return null
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  const handleAiDraft = async () => {
+    const topic = window.prompt('What should the article be about?')
+    if (!topic) return
+    const data = await callAI('draft', { topic })
+    if (data?.result && editor) {
+      editor.commands.setContent(data.result)
+      setArticle(prev => ({ ...prev, content: data.result }))
+    }
+  }
+
+  const handleAiOutline = async () => {
+    const topic = window.prompt('What topic should the outline cover?')
+    if (!topic) return
+    const data = await callAI('outline', { topic })
+    if (data?.result && editor) {
+      editor.commands.setContent(data.result)
+      setArticle(prev => ({ ...prev, content: data.result }))
+    }
+  }
+
+  const handleAiImprove = async () => {
+    if (!article.content || article.content === '<p></p>') return alert('Write some content first')
+    const data = await callAI('improve', { content: article.content })
+    if (data?.result && editor) {
+      editor.commands.setContent(data.result)
+      setArticle(prev => ({ ...prev, content: data.result }))
+    }
+  }
+
+  const handleAiSeo = async () => {
+    if (!article.title) return alert('Add a title first')
+    const data = await callAI('seo', { title: article.title, content: article.content })
+    if (data?.result && data.type === 'json') {
+      setArticle(prev => ({
+        ...prev,
+        seo_title: data.result.seo_title || prev.seo_title,
+        seo_description: data.result.seo_description || prev.seo_description,
+        seo_keywords: data.result.seo_keywords || prev.seo_keywords,
+      }))
+    }
+  }
+
+  const handleAiExcerpt = async () => {
+    if (!article.content || article.content === '<p></p>') return alert('Write some content first')
+    const data = await callAI('excerpt', { title: article.title, content: article.content })
+    if (data?.result) {
+      setArticle(prev => ({ ...prev, excerpt: data.result }))
+    }
+  }
 
   const editor = useEditor({
     extensions: [
@@ -138,9 +223,36 @@ export default function ArticleEditor({ article: initial, mode }: { article?: Ar
           <button onClick={() => setShowPreview(!showPreview)} className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-sm hover:bg-slate-50">
             <Eye size={16} /> {showPreview ? 'Editor' : 'Preview'}
           </button>
-          <button onClick={() => alert('AI writing assistance coming soon. Add ANTHROPIC_API_KEY to enable.')} className="flex items-center gap-2 px-4 py-2 border border-purple-200 text-purple-600 rounded-lg text-sm hover:bg-purple-50">
-            <Sparkles size={16} /> AI Assist
-          </button>
+          <div className="relative" ref={aiMenuRef}>
+            <button
+              onClick={() => setShowAiMenu(!showAiMenu)}
+              disabled={aiLoading}
+              className="flex items-center gap-2 px-4 py-2 border border-purple-200 text-purple-600 rounded-lg text-sm hover:bg-purple-50 disabled:opacity-50"
+            >
+              <Sparkles size={16} className={aiLoading ? 'animate-spin' : ''} />
+              {aiLoading ? 'Generating...' : 'AI Assist'}
+            </button>
+            {showAiMenu && (
+              <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1">
+                {[
+                  { label: 'Draft from topic...', action: handleAiDraft, desc: 'Generate a full article' },
+                  { label: 'Generate outline...', action: handleAiOutline, desc: 'Create article structure' },
+                  { label: 'Improve content', action: handleAiImprove, desc: 'Polish existing text' },
+                  { label: 'Generate SEO', action: handleAiSeo, desc: 'Fill SEO fields' },
+                  { label: 'Generate excerpt', action: handleAiExcerpt, desc: 'Create card summary' },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={item.action}
+                    className="w-full text-left px-4 py-2.5 hover:bg-purple-50 transition-colors"
+                  >
+                    <div className="text-sm font-medium text-[#0f172a]">{item.label}</div>
+                    <div className="text-xs text-slate-400">{item.desc}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           {mode === 'edit' && (
             <button onClick={handleDelete} className="flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50">
               <Trash2 size={16} /> Delete
