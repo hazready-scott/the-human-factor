@@ -30,7 +30,8 @@ export async function POST(request: Request) {
     }).select('id').single()
 
     if (error) {
-      console.error('Contact insert error:', JSON.stringify(error))
+      console.error('Contact insert FULL error:', error.message, error.code, error.details, error.hint)
+      console.error('Service role key starts with:', process.env.SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20))
       return NextResponse.json({ error: 'Failed to save contact' }, { status: 500 })
     }
 
