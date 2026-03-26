@@ -172,7 +172,7 @@ export default function ArticleEditor({ article: initial, mode }: { article?: Ar
     setImagePromptLoading(false)
   }
 
-  // ── Image Upload (direct to Supabase Storage from browser) ──
+  // ── Image Upload (via server-side API route with service role key) ──
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -183,26 +183,24 @@ export default function ArticleEditor({ article: initial, mode }: { article?: Ar
       return
     }
 
+    if (file.size > 4 * 1024 * 1024) {
+      alert('File too large. Maximum 4MB.')
+      return
+    }
+
     setUploading(true)
     try {
-      const { createClient } = await import('@/lib/supabase/client')
-      const supabase = createClient()
+      const formData = new FormData()
+      formData.append('file', file)
 
-      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-      const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+      const data = await res.json()
 
-      const { error } = await supabase.storage
-        .from('article-images')
-        .upload(filename, file, { contentType: file.type, upsert: false })
-
-      if (error) {
-        console.error('Upload error:', error)
-        alert(error.message || 'Upload failed')
+      if (!res.ok) {
+        console.error('Upload error:', data)
+        alert(data.error || 'Upload failed')
       } else {
-        const { data: { publicUrl } } = supabase.storage
-          .from('article-images')
-          .getPublicUrl(filename)
-        setArticle(prev => ({ ...prev, cover_image_url: publicUrl }))
+        setArticle(prev => ({ ...prev, cover_image_url: data.url }))
       }
     } catch (err) {
       console.error('Upload error:', err)
