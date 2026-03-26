@@ -172,22 +172,42 @@ export default function ArticleEditor({ article: initial, mode }: { article?: Ar
     setImagePromptLoading(false)
   }
 
-  // ── Image Upload ──
+  // ── Image Upload (direct to Supabase Storage from browser) ──
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!allowedTypes.includes(file.type)) {
+      alert('Invalid file type. Use JPEG, PNG, WebP, or GIF.')
+      return
+    }
+
     setUploading(true)
-    const formData = new FormData()
-    formData.append('file', file)
     try {
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
-      const data = await res.json()
-      if (res.ok && data.url) {
-        setArticle(prev => ({ ...prev, cover_image_url: data.url }))
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`
+
+      const { error } = await supabase.storage
+        .from('article-images')
+        .upload(filename, file, { contentType: file.type, upsert: false })
+
+      if (error) {
+        console.error('Upload error:', error)
+        alert(error.message || 'Upload failed')
       } else {
-        alert(data.error || 'Upload failed')
+        const { data: { publicUrl } } = supabase.storage
+          .from('article-images')
+          .getPublicUrl(filename)
+        setArticle(prev => ({ ...prev, cover_image_url: publicUrl }))
       }
-    } catch { alert('Upload failed') }
+    } catch (err) {
+      console.error('Upload error:', err)
+      alert('Upload failed')
+    }
     setUploading(false)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
