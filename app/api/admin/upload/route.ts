@@ -4,16 +4,27 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export const runtime = 'nodejs'
 
+// Increase body size limit for this route (Vercel default is 4.5MB)
+export const maxDuration = 30
+
 export async function POST(request: Request) {
   // Auth check via session client
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) {
+    console.error('[Upload] Auth failed - no user session')
+    return NextResponse.json({ error: 'Unauthorized - please sign in again' }, { status: 401 })
+  }
 
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
-    if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    if (!file) {
+      console.error('[Upload] No file in form data')
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    }
+
+    console.log('[Upload] File received:', file.name, file.type, file.size, 'bytes')
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
@@ -21,7 +32,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid file type. Use JPEG, PNG, WebP, or GIF.' }, { status: 400 })
     }
 
-    // Validate size (4MB to stay within Vercel limits)
+    // Validate size (4MB)
     if (file.size > 4 * 1024 * 1024) {
       return NextResponse.json({ error: 'File too large. Maximum 4MB.' }, { status: 400 })
     }
@@ -33,7 +44,14 @@ export async function POST(request: Request) {
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    const admin = createAdminClient()
+    let admin
+    try {
+      admin = createAdminClient()
+    } catch (err) {
+      console.error('[Upload] Admin client creation failed:', err)
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+
     const { error } = await admin.storage
       .from('article-images')
       .upload(filename, buffer, {
@@ -42,7 +60,7 @@ export async function POST(request: Request) {
       })
 
     if (error) {
-      console.error('Supabase upload error:', error)
+      console.error('[Upload] Supabase storage error:', JSON.stringify(error))
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
@@ -50,9 +68,10 @@ export async function POST(request: Request) {
       .from('article-images')
       .getPublicUrl(filename)
 
+    console.log('[Upload] Success:', publicUrl)
     return NextResponse.json({ url: publicUrl })
   } catch (err) {
-    console.error('Upload handler error:', err)
+    console.error('[Upload] Handler error:', err)
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
   }
 }
