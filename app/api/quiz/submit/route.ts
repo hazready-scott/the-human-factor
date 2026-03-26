@@ -1,7 +1,32 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email/send'
 import { quizResultsEmail } from '@/lib/email/templates'
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+async function supabasePost(table: string, data: Record<string, unknown>, returnData = false) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Prefer': returnData ? 'return=representation' : 'return=minimal',
+    },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    console.error(`Supabase ${table} insert error:`, res.status, errText)
+    return null
+  }
+  if (returnData) {
+    const rows = await res.json()
+    return rows[0] || null
+  }
+  return true
+}
 
 export async function POST(request: Request) {
   try {
@@ -16,8 +41,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Name and email are required' }, { status: 400 })
     }
 
-    const supabase = createAdminClient()
-
     // Determine readiness level
     const readiness_level =
       overall_score >= 78 ? 'Implementation Ready' :
@@ -26,62 +49,44 @@ export async function POST(request: Request) {
       'Foundation Building'
 
     // Insert assessment
-    const { data: assessment, error: assessmentError } = await supabase
-      .from('aria_assessments')
-      .insert({
-        name, email, org_name: org_name || null,
-        industry, org_size: org_size || null, role: role || null,
-        overall_score, dimension_scores, raw_intake, raw_answers,
-        readiness_level,
-        utm_source: utm_source || null,
-        utm_medium: utm_medium || null,
-        utm_campaign: utm_campaign || null,
-        referrer: referrer || null,
-      })
-      .select('id')
-      .single()
+    const assessment = await supabasePost('aria_assessments', {
+      name, email, org_name: org_name || null,
+      industry, org_size: org_size || null, role: role || null,
+      overall_score, dimension_scores, raw_intake, raw_answers,
+      readiness_level,
+      utm_source: utm_source || null,
+      utm_medium: utm_medium || null,
+      utm_campaign: utm_campaign || null,
+      referrer: referrer || null,
+    }, true)
 
-    if (assessmentError) {
-      console.error('Assessment insert error:', assessmentError)
+    if (!assessment) {
       return NextResponse.json({ error: 'Failed to save assessment' }, { status: 500 })
     }
 
-    // Upsert contact
-    const { data: existingContact } = await supabase
-      .from('contacts')
-      .select('id')
-      .eq('email', email)
-      .single()
+    // Upsert contact (try insert, ignore conflict on existing email)
+    await supabasePost('contacts', {
+      name,
+      email,
+      organization: org_name || null,
+      source: 'quiz_submission',
+      status: 'new',
+      assessment_id: assessment.id,
+      utm_source: utm_source || null,
+      utm_medium: utm_medium || null,
+      utm_campaign: utm_campaign || null,
+    })
 
-    if (existingContact) {
-      await supabase.from('contacts').update({
-        assessment_id: assessment.id,
-        name,
-        organization: org_name || null,
-      }).eq('id', existingContact.id)
-    } else {
-      await supabase.from('contacts').insert({
-        name,
-        email,
-        organization: org_name || null,
-        source: 'quiz_submission',
-        status: 'new',
-        assessment_id: assessment.id,
-        utm_source: utm_source || null,
-        utm_medium: utm_medium || null,
-        utm_campaign: utm_campaign || null,
-      })
-    }
-
-    // Send results email (fire-and-forget)
-    sendEmail({
+    // Send results email to the person who completed the quiz
+    await sendEmail({
       to: email,
       subject: 'Your AI Readiness Results — The Human Factor',
       html: quizResultsEmail(name, overall_score, dimension_scores),
     })
 
     return NextResponse.json({ success: true, assessmentId: assessment.id })
-  } catch {
+  } catch (err) {
+    console.error('Quiz submit error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
