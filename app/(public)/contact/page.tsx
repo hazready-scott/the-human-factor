@@ -54,7 +54,7 @@ export default function ContactPage() {
             <div className="card text-center">
               <h3 className="font-bold text-lg mb-2 text-white">Book a Free Conversation</h3>
               <p className="text-sm text-slate-500 mb-4">30-minute call to discuss your organization&apos;s needs and potential next steps.</p>
-              <a href="mailto:info@thehumanfactor.ca?subject=Free%20Conversation%20Request" className="btn-primary text-sm">Request a Call</a>
+              <Link href="/book" className="btn-primary text-sm">Book a Call</Link>
             </div>
             <div className="card text-center">
               <h3 className="font-bold text-lg mb-2 text-white">Take the Assessment First</h3>

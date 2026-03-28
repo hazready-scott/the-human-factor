@@ -166,27 +166,37 @@ export default function PresenterConsole({ presentation }: Props) {
   useEffect(() => {
     const channel = new BroadcastChannel(`thf-presentation-${presentation.id}`)
     channelRef.current = channel
+    let gotResponse = false
 
     channel.onmessage = (e) => {
       if (e.data.type === 'sync_response') {
         setCurrentIndex(e.data.slideIndex)
         setConnected(true)
+        gotResponse = true
       }
     }
 
     // Request sync from audience window
     channel.postMessage({ type: 'sync_request' })
 
-    // If no response in 2s, assume disconnected
+    // If no response in 2s, assume disconnected but still allow control
     const timeout = setTimeout(() => {
-      if (!connected) setConnected(false)
+      if (!gotResponse) setConnected(false)
     }, 2000)
+
+    // Periodically try to reconnect
+    const reconnect = setInterval(() => {
+      if (!gotResponse) {
+        channel.postMessage({ type: 'sync_request' })
+      }
+    }, 5000)
 
     return () => {
       clearTimeout(timeout)
+      clearInterval(reconnect)
       channel.close()
     }
-  }, [presentation.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [presentation.id])
 
   const navigate = useCallback((index: number) => {
     if (index < 0 || index >= slides.length) return

@@ -55,6 +55,8 @@ export default function PresentationViewer({ presentation }: Props) {
   const [isTransitioning, setIsTransitioning] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
+  const [showControls, setShowControls] = useState(false)
+  const hideTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const slides = presentation.slides || []
   const settings = presentation.settings || { theme: 'default', transition: 'fade', transitionSpeed: 300, aspectRatio: '16:9', showSlideNumbers: true, showProgressBar: true }
@@ -170,15 +172,18 @@ export default function PresentationViewer({ presentation }: Props) {
   }, [presentation.id, currentIndex, goTo])
 
   const openPresenterMode = () => {
-    const width = Math.min(1200, window.screen.availWidth * 0.6)
-    const height = Math.min(800, window.screen.availHeight * 0.8)
     window.open(
       `/p/${presentation.slug}/presenter${presentation.share_token ? `?token=${presentation.share_token}` : ''}`,
       'presenter-console',
-      `width=${width},height=${height},menubar=no,toolbar=no,location=no,status=no`
+      `width=1000,height=700,menubar=no,toolbar=no,location=no,status=no`
     )
-    containerRef.current?.requestFullscreen?.()
   }
+
+  const handleMouseMove = useCallback(() => {
+    setShowControls(true)
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+    hideTimerRef.current = setTimeout(() => setShowControls(false), 3000)
+  }, [])
 
   const currentSlide = slides[currentIndex]
   if (!currentSlide) return null
@@ -189,19 +194,23 @@ export default function PresentationViewer({ presentation }: Props) {
   return (
     <div
       ref={containerRef}
-      className="w-screen h-screen overflow-hidden flex items-center justify-center cursor-none"
-      style={{ backgroundColor: theme.bg }}
+      className={`w-screen h-screen overflow-hidden flex items-center justify-center ${showControls ? 'cursor-default' : 'cursor-none'}`}
+      style={{ backgroundColor: '#000000' }}
       onClick={next}
+      onMouseMove={handleMouseMove}
     >
       {/* Slide container at fixed internal resolution, CSS-scaled */}
       <div
         style={{
           width: slideWidth,
           height: slideHeight,
-          transform: `scale(${scale})`,
+          transform: `scale(${scale * 0.96})`,
           transformOrigin: 'center center',
           position: 'relative',
           backgroundColor: bg?.color || theme.bg,
+          borderRadius: '16px',
+          overflow: 'hidden',
+          boxShadow: '0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px rgba(0,0,0,0.5)',
           color: settings.headingColor || theme.text,
           fontFamily: `'${settings.fontFamily || 'Inter'}', sans-serif`,
           ['--heading-font' as string]: `'${settings.headingFontFamily || settings.fontFamily || 'Inter'}', sans-serif`,
@@ -260,6 +269,48 @@ export default function PresentationViewer({ presentation }: Props) {
           {currentIndex + 1} / {slides.length}
         </div>
       )}
+
+      {/* Presenter controls overlay — appears on mouse move */}
+      <div
+        className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-3 transition-all duration-300 ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}`}
+        style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)' }}
+      >
+        <div className="flex items-center gap-3">
+          <button
+            onClick={(e) => { e.stopPropagation(); prev() }}
+            disabled={currentIndex === 0}
+            className="px-3 py-1.5 text-white/70 hover:text-white text-sm rounded-lg hover:bg-white/10 transition-colors disabled:opacity-30"
+          >
+            ← Prev
+          </button>
+          <span className="text-white/50 text-sm">{currentIndex + 1} / {slides.length}</span>
+          <button
+            onClick={(e) => { e.stopPropagation(); next() }}
+            disabled={currentIndex >= slides.length - 1}
+            className="px-3 py-1.5 text-white/70 hover:text-white text-sm rounded-lg hover:bg-white/10 transition-colors disabled:opacity-30"
+          >
+            Next →
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); openPresenterMode() }}
+            className="px-3 py-1.5 text-white/70 hover:text-white text-sm rounded-lg hover:bg-white/10 transition-colors"
+          >
+            Presenter View
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              if (document.fullscreenElement) document.exitFullscreen()
+              else containerRef.current?.requestFullscreen()
+            }}
+            className="px-3 py-1.5 text-white/70 hover:text-white text-sm rounded-lg hover:bg-white/10 transition-colors"
+          >
+            {typeof document !== 'undefined' && document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

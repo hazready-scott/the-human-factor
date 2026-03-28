@@ -58,6 +58,10 @@ function ImageUploadField({ label, value, onChange, slideContext }: { label: str
   const [uploading, setUploading] = useState(false)
   const [suggesting, setSuggesting] = useState(false)
   const [suggestions, setSuggestions] = useState<Array<{ concept: string; searchTerms: string; style: string }> | null>(null)
+  const [searching, setSearching] = useState(false)
+  const [searchResults, setSearchResults] = useState<Array<{ id: string; url: string; thumb: string; alt: string; credit: string; creditLink: string }> | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -73,10 +77,12 @@ function ImageUploadField({ label, value, onChange, slideContext }: { label: str
     } catch { alert('Upload failed') }
     setUploading(false)
   }
+
   const handleSuggest = async () => {
     if (!slideContext) return
     setSuggesting(true)
     setSuggestions(null)
+    setSearchResults(null)
     try {
       const res = await fetch('/api/admin/ai', {
         method: 'POST',
@@ -88,6 +94,26 @@ function ImageUploadField({ label, value, onChange, slideContext }: { label: str
     } catch { /* ignore */ }
     setSuggesting(false)
   }
+
+  const handleSearch = async (query: string) => {
+    setSearching(true)
+    setSearchResults(null)
+    setSearchQuery(query)
+    try {
+      const res = await fetch(`/api/admin/image-search?q=${encodeURIComponent(query)}`)
+      const data = await res.json()
+      if (data.images) setSearchResults(data.images)
+      else if (data.error) alert(data.error)
+    } catch { /* ignore */ }
+    setSearching(false)
+  }
+
+  const selectImage = (url: string) => {
+    onChange(url)
+    setSearchResults(null)
+    setSuggestions(null)
+  }
+
   return (
     <Field label={label}>
       <div className="space-y-2">
@@ -105,17 +131,62 @@ function ImageUploadField({ label, value, onChange, slideContext }: { label: str
             </button>
           )}
         </div>
-        {suggestions && (
+
+        {/* AI Suggestions — click one to search for images */}
+        {suggestions && !searchResults && (
           <div className="space-y-2 mt-2">
-            <p className="text-[10px] text-slate-600 uppercase tracking-wider">AI Image Suggestions</p>
+            <p className="text-[10px] text-slate-600 uppercase tracking-wider">Choose an image concept</p>
             {suggestions.map((s, i) => (
-              <div key={i} className="p-2 rounded-lg bg-white/5 border border-white/10 space-y-1">
+              <button
+                key={i}
+                onClick={() => handleSearch(s.searchTerms)}
+                className="w-full text-left p-2.5 rounded-lg bg-white/5 border border-white/10 hover:border-violet-500/40 hover:bg-violet-500/10 transition-colors space-y-1"
+              >
                 <p className="text-xs text-slate-300">{s.concept}</p>
-                <p className="text-[10px] text-slate-500">Search: {s.searchTerms}</p>
                 <p className="text-[10px] text-violet-400/70">{s.style}</p>
-              </div>
+              </button>
             ))}
             <button onClick={() => setSuggestions(null)} className="text-[10px] text-slate-600 hover:text-slate-400">Dismiss</button>
+          </div>
+        )}
+
+        {/* Searching indicator */}
+        {searching && (
+          <div className="flex items-center gap-2 py-3 justify-center">
+            <Loader2 className="w-4 h-4 animate-spin text-violet-400" />
+            <span className="text-xs text-slate-500">Searching images...</span>
+          </div>
+        )}
+
+        {/* Image search results grid */}
+        {searchResults && (
+          <div className="space-y-2 mt-2">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-slate-600 uppercase tracking-wider">Select an image</p>
+              <button onClick={() => { setSearchResults(null); setSuggestions(null) }} className="text-[10px] text-slate-600 hover:text-slate-400">Close</button>
+            </div>
+            {searchResults.length === 0 ? (
+              <p className="text-xs text-slate-500 py-2">No images found for &ldquo;{searchQuery}&rdquo;</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-1.5">
+                {searchResults.map(img => (
+                  <button
+                    key={img.id}
+                    onClick={() => selectImage(img.url)}
+                    className="relative group rounded-lg overflow-hidden aspect-video hover:ring-2 ring-cyan-500 transition-all"
+                  >
+                    <img src={img.thumb} alt={img.alt} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                      <span className="text-white text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {searchResults.length > 0 && (
+              <p className="text-[9px] text-slate-700">Photos via Unsplash</p>
+            )}
+            <button onClick={() => { setSearchResults(null) }} className="text-[10px] text-violet-400 hover:text-violet-300">← Back to suggestions</button>
           </div>
         )}
       </div>

@@ -25,6 +25,7 @@ export default function Header() {
         <nav className="hidden md:flex items-center gap-8">
           {[
             { href: '/about', label: 'About' },
+            { href: '/team', label: 'Team' },
             { href: '/resources', label: 'Resources' },
             { href: '/assessment', label: 'AI Readiness Quiz' },
             { href: '/contact', label: 'Contact' },
@@ -45,7 +46,7 @@ export default function Header() {
 
       {menuOpen && (
         <nav className="md:hidden px-6 py-4 space-y-3" style={{ background: 'rgba(11,17,32,0.95)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          {['About', 'Resources', 'AI Readiness Quiz', 'Contact'].map(label => {
+          {['About', 'Team', 'Resources', 'AI Readiness Quiz', 'Contact'].map(label => {
             const href = `/${label === 'AI Readiness Quiz' ? 'assessment' : label.toLowerCase()}`
             return <Link key={href} href={href} className="block text-sm font-medium text-slate-300" onClick={() => setMenuOpen(false)}>{label}</Link>
           })}

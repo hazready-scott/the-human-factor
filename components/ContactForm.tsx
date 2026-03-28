@@ -6,7 +6,7 @@ const inputClass = "w-full px-4 py-3 rounded-lg text-sm text-slate-200 transitio
 const inputStyle = { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }
 
 export default function ContactForm() {
-  const [form, setForm] = useState({ name: '', email: '', organization: '', message: '' })
+  const [form, setForm] = useState({ name: '', email: '', organization: '', role: '', message: '' })
   const [state, setState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,6 +41,10 @@ export default function ContactForm() {
       <div>
         <label htmlFor="organization" className="block text-sm font-medium mb-1 text-slate-300">Organization</label>
         <input type="text" id="organization" value={form.organization} onChange={e => setForm({ ...form, organization: e.target.value })} className={inputClass} style={inputStyle} placeholder="Your organization (optional)" />
+      </div>
+      <div>
+        <label htmlFor="role" className="block text-sm font-medium mb-1 text-slate-300">Role</label>
+        <input type="text" id="role" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className={inputClass} style={inputStyle} placeholder="Your role (optional)" />
       </div>
       <div>
         <label htmlFor="message" className="block text-sm font-medium mb-1 text-slate-300">Message</label>
