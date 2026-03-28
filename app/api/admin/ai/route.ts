@@ -168,6 +168,64 @@ Return ONLY valid JSON (no markdown code blocks):
 }`
         break
 
+      case 'presentation_approaches':
+        userPrompt = `Generate exactly 3 different approaches for a presentation.
+
+Title: "${context.title}"
+${context.subtitle ? `Event: ${context.subtitle}` : ''}
+${context.author ? `Presenter: ${context.author} ${context.credentials ? `(${context.credentials})` : ''}` : ''}
+Description: ${context.description || ''}
+${context.keyPoints ? `Key points/learning objectives:\n${context.keyPoints}` : ''}
+${context.audience ? `Target audience: ${context.audience}` : ''}
+${context.tone ? `Tone: ${context.tone}` : ''}
+${context.presentationType ? `Format: ${context.presentationType}` : ''}
+${context.duration ? `Duration: ${context.duration} minutes` : ''}
+${context.disclosures ? `Disclosures: ${context.disclosures}` : ''}
+
+Each approach should offer a distinctly different narrative strategy, structure, and storyline for the same content. Think about different ways to frame the material: e.g., problem-solution, storytelling, data-driven, provocative question, case-study-led, etc.
+
+Return ONLY valid JSON (no markdown code blocks) as an array of 3 objects:
+[
+  {
+    "title": "Approach name (e.g., 'The Practitioner's Journey')",
+    "storyline": "2-3 sentence description of the narrative arc and how the presentation will unfold",
+    "slideCount": estimated number of slides (based on 1 slide per 2 minutes),
+    "structure": ["Section 1 name", "Section 2 name", "Section 3 name", ...]
+  }
+]`
+        break
+
+      case 'presentation_tags':
+        userPrompt = `Generate tags and social media hashtags for this presentation.
+
+Title: ${context.title}
+Description: ${context.description || ''}
+${context.slides ? `First few slides: ${JSON.stringify(context.slides).substring(0, 1000)}` : ''}
+
+Return ONLY valid JSON (no markdown code blocks):
+{
+  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+  "hashtags": "#relevant #hashtags #separated #by #spaces"
+}`
+        break
+
+      case 'slide_image_suggestion':
+        userPrompt = `Suggest 3 compelling image concepts for this presentation slide. Each concept should be suitable for a professional presentation.
+
+Slide type: ${context.slideType}
+Slide content: ${JSON.stringify(context.slide).substring(0, 1000)}
+${context.presentationTitle ? `Presentation: ${context.presentationTitle}` : ''}
+
+Return ONLY valid JSON (no markdown code blocks) as an array of 3 objects:
+[
+  {
+    "concept": "Brief description of the image concept",
+    "searchTerms": "keywords for searching stock photos",
+    "style": "Photo style (e.g., 'minimalist tech illustration', 'dramatic landscape', 'abstract geometric')"
+  }
+]`
+        break
+
       case 'presentation_seo':
         userPrompt = `Generate SEO metadata for this presentation.
 
@@ -188,7 +246,7 @@ Return ONLY valid JSON (no markdown code blocks):
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: action === 'presentation_outline' ? 8192 : 4096,
+      max_tokens: ['presentation_outline', 'presentation_approaches'].includes(action) ? 8192 : 4096,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userPrompt }],
     })
@@ -197,7 +255,7 @@ Return ONLY valid JSON (no markdown code blocks):
     const result = textBlock ? textBlock.text : ''
 
     // Parse JSON responses
-    if (['seo', 'concepts', 'full_article', 'presentation_outline', 'slide_content', 'slide_refine', 'presentation_social', 'presentation_seo'].includes(action)) {
+    if (['seo', 'concepts', 'full_article', 'presentation_outline', 'slide_content', 'slide_refine', 'presentation_social', 'presentation_seo', 'presentation_approaches', 'presentation_tags', 'slide_image_suggestion'].includes(action)) {
       try {
         const parsed = JSON.parse(result)
         return NextResponse.json({ result: parsed, type: 'json' })

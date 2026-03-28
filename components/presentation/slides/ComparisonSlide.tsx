@@ -2,7 +2,7 @@ import type { ComparisonSlide as ComparisonSlideType } from '@/lib/presentation/
 
 export default function ComparisonSlide({ slide }: { slide: ComparisonSlideType }) {
   return (
-    <div className="flex flex-col h-full px-[5%] py-[5%]">
+    <div className="slide-animate flex flex-col h-full px-[5%] py-[5%]">
       {slide.heading && (
         <h2 className="text-[2.5rem] font-bold text-white mb-8">{slide.heading}</h2>
       )}

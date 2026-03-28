@@ -2,7 +2,7 @@ import type { ListSlide as ListSlideType } from '@/lib/presentation/slide-types'
 
 export default function ListSlide({ slide }: { slide: ListSlideType }) {
   return (
-    <div className="flex flex-col justify-center h-full px-[8%] py-[5%]">
+    <div className="slide-animate flex flex-col justify-center h-full px-[8%] py-[5%]">
       <h2 className="text-[2.5rem] font-bold text-white mb-8">{slide.heading}</h2>
       <ul className="space-y-5">
         {slide.items.map((item, i) => (

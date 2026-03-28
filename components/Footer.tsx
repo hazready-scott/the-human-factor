@@ -25,7 +25,7 @@ export default function Footer() {
               ].map(link => (
                 <Link key={link.href} href={link.href} className="block text-sm text-slate-400 hover:text-[#06b6d4] transition-colors">{link.label}</Link>
               ))}
-              <a href="https://www.linkedin.com/company/the-human-factor-consulting/" target="_blank" rel="noopener noreferrer" className="block text-sm text-slate-400 hover:text-[#06b6d4] transition-colors">LinkedIn</a>
+              <a href="https://linkedin.com/in/sdramey" target="_blank" rel="noopener noreferrer" className="block text-sm text-slate-400 hover:text-[#06b6d4] transition-colors">LinkedIn</a>
             </nav>
           </div>
           <div>

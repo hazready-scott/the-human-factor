@@ -2,7 +2,7 @@ import type { ImageSlide as ImageSlideType } from '@/lib/presentation/slide-type
 
 export default function ImageSlide({ slide }: { slide: ImageSlideType }) {
   return (
-    <div className="relative h-full w-full flex flex-col">
+    <div className="slide-animate relative h-full w-full flex flex-col">
       <div className="flex-1 relative">
         <img
           src={slide.url}

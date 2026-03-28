@@ -2,7 +2,7 @@ import type { TwoColumnSlide as TwoColumnSlideType } from '@/lib/presentation/sl
 
 export default function TwoColumnSlide({ slide }: { slide: TwoColumnSlideType }) {
   return (
-    <div className="flex flex-col h-full px-[5%] py-[5%]">
+    <div className="slide-animate flex flex-col h-full px-[5%] py-[5%]">
       {slide.heading && (
         <h2 className="text-[2.5rem] font-bold text-white mb-8">{slide.heading}</h2>
       )}

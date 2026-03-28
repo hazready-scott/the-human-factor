@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { Presentation, Slide, SlideType } from '@/lib/presentation/slide-types'
+import type { Presentation, Slide, SlideType, PollSlide } from '@/lib/presentation/slide-types'
+import { usePollRealtime } from '@/lib/presentation/use-poll-realtime'
+import LiveResults from './interactive/LiveResults'
 
 import TitleSlideRenderer from './slides/TitleSlide'
 import SectionSlideRenderer from './slides/SectionSlide'
@@ -14,6 +16,7 @@ import ListSlideRenderer from './slides/ListSlide'
 import ComparisonSlideRenderer from './slides/ComparisonSlide'
 import InteractiveSlideRenderer from './slides/InteractiveSlide'
 import ClosingSlideRenderer from './slides/ClosingSlide'
+import PollSlideRenderer from './slides/PollSlide'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const SLIDE_RENDERERS: Record<SlideType, React.ComponentType<{ slide: any }>> = {
@@ -28,6 +31,7 @@ const SLIDE_RENDERERS: Record<SlideType, React.ComponentType<{ slide: any }>> = 
   comparison: ComparisonSlideRenderer,
   interactive: InteractiveSlideRenderer,
   closing: ClosingSlideRenderer,
+  poll: PollSlideRenderer,
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
@@ -52,6 +56,87 @@ function MiniSlide({ slide, label }: { slide: Slide; label?: string }) {
         <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-[10px] text-slate-400 px-2 py-0.5 text-center">
           {label}
         </div>
+      )}
+    </div>
+  )
+}
+
+function PollControls({ slide, slug }: { slide: PollSlide; slug: string }) {
+  const [pollStatus, setPollStatus] = useState<'waiting' | 'active' | 'closed'>('waiting')
+  const [pollSessionId, setPollSessionId] = useState(slide.pollSessionId || '')
+  const { results, totalResponses } = usePollRealtime(pollSessionId || undefined, slide.pollType, slug)
+
+  const createAndActivate = async () => {
+    try {
+      // Create poll session
+      const res = await fetch(`/api/presentations/${slug}/polls`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: slide.question,
+          poll_type: slide.pollType,
+          options: slide.options || [],
+          settings: slide.settings || {},
+          slide_index: 0,
+        }),
+      })
+      const data = await res.json()
+      if (data.poll) {
+        setPollSessionId(data.poll.id)
+        // Activate it
+        await fetch(`/api/presentations/${slug}/polls/${data.poll.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'active' }),
+        })
+        setPollStatus('active')
+      }
+    } catch (err) {
+      console.error('Failed to create poll:', err)
+    }
+  }
+
+  const updateStatus = async (status: 'active' | 'closed') => {
+    if (!pollSessionId) return
+    try {
+      await fetch(`/api/presentations/${slug}/polls/${pollSessionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      setPollStatus(status)
+    } catch (err) {
+      console.error('Failed to update poll status:', err)
+    }
+  }
+
+  return (
+    <div className="flex-shrink-0 rounded-lg p-3 space-y-2" style={{ background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.15)' }}>
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] uppercase tracking-wider text-cyan-400 font-semibold">Poll Controls</span>
+        {totalResponses > 0 && (
+          <span className="text-xs text-slate-400">{totalResponses} responses</span>
+        )}
+      </div>
+      <div className="flex gap-2">
+        {pollStatus === 'waiting' && (
+          <button onClick={createAndActivate} className="flex-1 px-3 py-1.5 bg-green-500/20 text-green-400 rounded text-xs font-medium hover:bg-green-500/30">
+            Activate Poll
+          </button>
+        )}
+        {pollStatus === 'active' && (
+          <button onClick={() => updateStatus('closed')} className="flex-1 px-3 py-1.5 bg-red-500/20 text-red-400 rounded text-xs font-medium hover:bg-red-500/30">
+            Close Poll
+          </button>
+        )}
+        {pollStatus === 'closed' && (
+          <button onClick={createAndActivate} className="flex-1 px-3 py-1.5 bg-cyan-500/20 text-cyan-400 rounded text-xs font-medium hover:bg-cyan-500/30">
+            Reset & Reactivate
+          </button>
+        )}
+      </div>
+      {totalResponses > 0 && (
+        <LiveResults pollType={slide.pollType} results={results} options={slide.options} compact />
       )}
     </div>
   )
@@ -178,6 +263,14 @@ export default function PresenterConsole({ presentation }: Props) {
               )}
             </div>
           </div>
+
+          {/* Poll controls (when on a poll slide) */}
+          {currentSlide?.type === 'poll' && (
+            <PollControls
+              slide={currentSlide}
+              slug={presentation.slug}
+            />
+          )}
 
           {/* Speaker notes */}
           <div className="flex-1 min-h-0">

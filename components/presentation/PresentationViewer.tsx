@@ -15,9 +15,11 @@ import ListSlideRenderer from './slides/ListSlide'
 import ComparisonSlideRenderer from './slides/ComparisonSlide'
 import InteractiveSlideRenderer from './slides/InteractiveSlide'
 import ClosingSlideRenderer from './slides/ClosingSlide'
+import PollSlideRenderer from './slides/PollSlide'
+import GradientOrb from './effects/GradientOrb'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-const SLIDE_RENDERERS: Record<SlideType, React.ComponentType<{ slide: any }>> = {
+const SLIDE_RENDERERS: Record<SlideType, React.ComponentType<{ slide: any; slug?: string }>> = {
   title: TitleSlideRenderer,
   section: SectionSlideRenderer,
   content: ContentSlideRenderer,
@@ -29,14 +31,19 @@ const SLIDE_RENDERERS: Record<SlideType, React.ComponentType<{ slide: any }>> = 
   comparison: ComparisonSlideRenderer,
   interactive: InteractiveSlideRenderer,
   closing: ClosingSlideRenderer,
+  poll: PollSlideRenderer,
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 // Theme CSS variables
-const THEMES = {
+const THEMES: Record<string, { bg: string; text: string; accent: string; bodyText?: string }> = {
   default: { bg: '#0f172a', text: '#f8fafc', accent: '#06b6d4' },
   dark: { bg: '#000000', text: '#ffffff', accent: '#06b6d4' },
-  light: { bg: '#fafaf9', text: '#1e293b', accent: '#0891b2' },
+  light: { bg: '#fafaf9', text: '#1e293b', accent: '#0891b2', bodyText: '#475569' },
+  midnight: { bg: '#0c1222', text: '#e2e8f0', accent: '#818cf8' },
+  forest: { bg: '#0f1f17', text: '#ecfdf5', accent: '#34d399' },
+  warm: { bg: '#1c1917', text: '#fafaf9', accent: '#f59e0b', bodyText: '#a8a29e' },
+  academic: { bg: '#fef9ef', text: '#1e293b', accent: '#7c3aed', bodyText: '#475569' },
 }
 
 interface Props {
@@ -195,8 +202,12 @@ export default function PresentationViewer({ presentation }: Props) {
           transformOrigin: 'center center',
           position: 'relative',
           backgroundColor: bg?.color || theme.bg,
-          color: theme.text,
-          fontFamily: "'Inter', sans-serif",
+          color: settings.headingColor || theme.text,
+          fontFamily: `'${settings.fontFamily || 'Inter'}', sans-serif`,
+          ['--heading-font' as string]: `'${settings.headingFontFamily || settings.fontFamily || 'Inter'}', sans-serif`,
+          ['--heading-color' as string]: settings.headingColor || theme.text,
+          ['--body-color' as string]: settings.bodyColor || theme.bodyText || theme.text,
+          ['--accent-color' as string]: settings.brandColor || theme.accent,
           transition: settings.transition === 'fade'
             ? `opacity ${settings.transitionSpeed || 300}ms ease-in-out`
             : settings.transition === 'slide'
@@ -221,9 +232,12 @@ export default function PresentationViewer({ presentation }: Props) {
           <div className="absolute inset-0" style={{ background: bg.gradient }} />
         )}
 
+        {/* Gradient orb effect */}
+        <GradientOrb accentColor={settings.brandColor || theme.accent} />
+
         {/* Slide content */}
-        <div className="relative z-10 w-full h-full">
-          {SlideRenderer && <SlideRenderer slide={currentSlide} />}
+        <div className="relative z-10 w-full h-full" key={currentSlide.id}>
+          {SlideRenderer && <SlideRenderer slide={currentSlide} slug={presentation.slug} />}
         </div>
       </div>
 
@@ -234,7 +248,7 @@ export default function PresentationViewer({ presentation }: Props) {
             className="h-full transition-all duration-300"
             style={{
               width: `${((currentIndex + 1) / slides.length) * 100}%`,
-              backgroundColor: theme.accent,
+              backgroundColor: settings.brandColor || theme.accent,
             }}
           />
         </div>

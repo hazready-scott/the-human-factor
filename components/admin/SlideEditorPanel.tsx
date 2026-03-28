@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Loader2, Sparkles } from 'lucide-react'
-import { SLIDE_TYPE_META, type Slide, type ContentSlide, type TitleSlide, type SectionSlide, type TwoColumnSlide, type ImageSlide, type QuoteSlide, type DataSlide, type ListSlide, type ComparisonSlide, type ClosingSlide, type InteractiveSlide as InteractiveSlideType } from '@/lib/presentation/slide-types'
+import { SLIDE_TYPE_META, type Slide, type ContentSlide, type TitleSlide, type SectionSlide, type TwoColumnSlide, type ImageSlide, type QuoteSlide, type DataSlide, type ListSlide, type ComparisonSlide, type ClosingSlide, type InteractiveSlide as InteractiveSlideType, type PollSlide } from '@/lib/presentation/slide-types'
 
 interface Props {
   slide: Slide
@@ -54,6 +54,75 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: str
 
 // ── Per-type editors ──
 
+function ImageUploadField({ label, value, onChange, slideContext }: { label: string; value: string; onChange: (url: string) => void; slideContext?: { slideType: string; slide: Record<string, unknown>; presentationTitle?: string } }) {
+  const [uploading, setUploading] = useState(false)
+  const [suggesting, setSuggesting] = useState(false)
+  const [suggestions, setSuggestions] = useState<Array<{ concept: string; searchTerms: string; style: string }> | null>(null)
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) { alert('Image must be under 2MB'); return }
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (data.url) onChange(data.url)
+      else alert(data.error || 'Upload failed')
+    } catch { alert('Upload failed') }
+    setUploading(false)
+  }
+  const handleSuggest = async () => {
+    if (!slideContext) return
+    setSuggesting(true)
+    setSuggestions(null)
+    try {
+      const res = await fetch('/api/admin/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'slide_image_suggestion', context: slideContext }),
+      })
+      const data = await res.json()
+      if (data.result) setSuggestions(data.result)
+    } catch { /* ignore */ }
+    setSuggesting(false)
+  }
+  return (
+    <Field label={label}>
+      <div className="space-y-2">
+        {value && <img src={value} alt="" className="w-full h-32 object-cover rounded-lg" />}
+        <div className="flex gap-2">
+          <input type="text" value={value || ''} onChange={e => onChange(e.target.value)} placeholder="https://..." className="admin-input flex-1 text-xs" />
+          <label className={`px-3 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors ${uploading ? 'bg-white/5 text-slate-600' : 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30'}`}>
+            {uploading ? '...' : 'Upload'}
+            <input type="file" accept="image/*" onChange={handleUpload} className="hidden" disabled={uploading} />
+          </label>
+          {slideContext && (
+            <button onClick={handleSuggest} disabled={suggesting} className="px-3 py-2 rounded-lg text-xs font-medium transition-colors bg-violet-500/20 text-violet-400 hover:bg-violet-500/30 disabled:opacity-50 flex items-center gap-1">
+              {suggesting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+              AI
+            </button>
+          )}
+        </div>
+        {suggestions && (
+          <div className="space-y-2 mt-2">
+            <p className="text-[10px] text-slate-600 uppercase tracking-wider">AI Image Suggestions</p>
+            {suggestions.map((s, i) => (
+              <div key={i} className="p-2 rounded-lg bg-white/5 border border-white/10 space-y-1">
+                <p className="text-xs text-slate-300">{s.concept}</p>
+                <p className="text-[10px] text-slate-500">Search: {s.searchTerms}</p>
+                <p className="text-[10px] text-violet-400/70">{s.style}</p>
+              </div>
+            ))}
+            <button onClick={() => setSuggestions(null)} className="text-[10px] text-slate-600 hover:text-slate-400">Dismiss</button>
+          </div>
+        )}
+      </div>
+    </Field>
+  )
+}
+
 function TitleEditor({ slide, onChange }: { slide: TitleSlide; onChange: (s: TitleSlide) => void }) {
   return (
     <div className="space-y-4">
@@ -63,6 +132,38 @@ function TitleEditor({ slide, onChange }: { slide: TitleSlide; onChange: (s: Tit
         <Field label="Author"><TextInput value={slide.author || ''} onChange={v => onChange({ ...slide, author: v })} /></Field>
         <Field label="Date"><TextInput value={slide.date || ''} onChange={v => onChange({ ...slide, date: v })} placeholder="March 2026" /></Field>
       </div>
+      <ImageUploadField
+        label="Title Image"
+        value={slide.image?.url || ''}
+        onChange={url => onChange({ ...slide, image: url ? { url, alt: '', position: slide.image?.position || 'background', opacity: slide.image?.opacity ?? 0.3 } : undefined })}
+        slideContext={{ slideType: 'title', slide: slide as unknown as Record<string, unknown> }}
+      />
+      {slide.image?.url && (
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Image Position">
+            <Select
+              value={slide.image.position || 'background'}
+              onChange={v => onChange({ ...slide, image: { ...slide.image!, position: v as 'background' | 'right' | 'left' } })}
+              options={[
+                { value: 'background', label: 'Background' },
+                { value: 'right', label: 'Right side' },
+                { value: 'left', label: 'Left side' },
+              ]}
+            />
+          </Field>
+          {slide.image.position === 'background' && (
+            <Field label={`Opacity (${Math.round((slide.image.opacity ?? 0.3) * 100)}%)`}>
+              <input
+                type="range"
+                min={0} max={100} step={5}
+                value={Math.round((slide.image.opacity ?? 0.3) * 100)}
+                onChange={e => onChange({ ...slide, image: { ...slide.image!, opacity: parseInt(e.target.value) / 100 } })}
+                className="w-full mt-2"
+              />
+            </Field>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -72,6 +173,17 @@ function SectionEditor({ slide, onChange }: { slide: SectionSlide; onChange: (s:
     <div className="space-y-4">
       <Field label="Heading"><TextInput value={slide.heading} onChange={v => onChange({ ...slide, heading: v })} placeholder="Section heading" large /></Field>
       <Field label="Subheading"><TextInput value={slide.subheading || ''} onChange={v => onChange({ ...slide, subheading: v })} /></Field>
+      <ImageUploadField
+        label="Background Image (optional)"
+        value={slide.image?.url || ''}
+        onChange={url => onChange({ ...slide, image: url ? { url, position: 'background', opacity: slide.image?.opacity ?? 0.2 } : undefined })}
+        slideContext={{ slideType: 'section', slide: slide as unknown as Record<string, unknown> }}
+      />
+      {slide.image?.url && (
+        <Field label={`Opacity (${Math.round((slide.image.opacity ?? 0.2) * 100)}%)`}>
+          <input type="range" min={0} max={100} step={5} value={Math.round((slide.image.opacity ?? 0.2) * 100)} onChange={e => onChange({ ...slide, image: { ...slide.image!, opacity: parseInt(e.target.value) / 100 } })} className="w-full" />
+        </Field>
+      )}
     </div>
   )
 }
@@ -81,9 +193,12 @@ function ContentEditor({ slide, onChange }: { slide: ContentSlide; onChange: (s:
     <div className="space-y-4">
       <Field label="Heading"><TextInput value={slide.heading} onChange={v => onChange({ ...slide, heading: v })} placeholder="Slide heading" large /></Field>
       <Field label="Body (HTML)"><TextArea value={slide.body} onChange={v => onChange({ ...slide, body: v })} placeholder="<p>Slide content...</p>" rows={6} /></Field>
-      <div className="flex items-center gap-4">
-        <Field label="Image URL"><TextInput value={slide.image?.url || ''} onChange={v => onChange({ ...slide, image: { ...slide.image, url: v, alt: slide.image?.alt || '', position: slide.image?.position || 'right', size: slide.image?.size || 'medium' } })} placeholder="https://..." /></Field>
-      </div>
+      <ImageUploadField
+        label="Image"
+        value={slide.image?.url || ''}
+        onChange={url => onChange({ ...slide, image: url ? { url, alt: slide.image?.alt || '', position: slide.image?.position || 'right', size: slide.image?.size || 'medium' } : undefined })}
+        slideContext={{ slideType: 'content', slide: slide as unknown as Record<string, unknown> }}
+      />
       {slide.image?.url && (
         <div className="grid grid-cols-2 gap-4">
           <Field label="Image Position">
@@ -125,7 +240,7 @@ function TwoColumnEditor({ slide, onChange }: { slide: TwoColumnSlide; onChange:
 function ImageEditor({ slide, onChange }: { slide: ImageSlide; onChange: (s: ImageSlide) => void }) {
   return (
     <div className="space-y-4">
-      <Field label="Image URL"><TextInput value={slide.url} onChange={v => onChange({ ...slide, url: v })} placeholder="https://..." /></Field>
+      <ImageUploadField label="Image" value={slide.url} onChange={url => onChange({ ...slide, url })} slideContext={{ slideType: 'image', slide: slide as unknown as Record<string, unknown> }} />
       <Field label="Alt Text"><TextInput value={slide.alt} onChange={v => onChange({ ...slide, alt: v })} /></Field>
       <Field label="Caption"><TextInput value={slide.caption || ''} onChange={v => onChange({ ...slide, caption: v })} /></Field>
       <Field label="Fit">
@@ -143,6 +258,12 @@ function QuoteEditor({ slide, onChange }: { slide: QuoteSlide; onChange: (s: Quo
         <Field label="Attribution"><TextInput value={slide.attribution || ''} onChange={v => onChange({ ...slide, attribution: v })} placeholder="Person name" /></Field>
         <Field label="Role / Title"><TextInput value={slide.role || ''} onChange={v => onChange({ ...slide, role: v })} placeholder="CEO, Company" /></Field>
       </div>
+      <ImageUploadField
+        label="Author Photo (optional)"
+        value={slide.image?.url || ''}
+        onChange={url => onChange({ ...slide, image: url ? { url } : undefined })}
+        slideContext={{ slideType: 'quote', slide: slide as unknown as Record<string, unknown> }}
+      />
     </div>
   )
 }
@@ -241,6 +362,9 @@ function ClosingEditor({ slide, onChange }: { slide: ClosingSlide; onChange: (s:
         <Field label="Website"><TextInput value={slide.contact?.website || ''} onChange={v => onChange({ ...slide, contact: { ...slide.contact, website: v } })} /></Field>
         <Field label="LinkedIn"><TextInput value={slide.contact?.linkedin || ''} onChange={v => onChange({ ...slide, contact: { ...slide.contact, linkedin: v } })} /></Field>
       </div>
+      <Field label="QR Code URL (generates a scannable QR code on the slide)">
+        <TextInput value={slide.qrCodeUrl || ''} onChange={v => onChange({ ...slide, qrCodeUrl: v })} placeholder="https://thehumanfactor.ca/contact" />
+      </Field>
     </div>
   )
 }
@@ -252,6 +376,71 @@ function InteractiveEditor({ slide, onChange }: { slide: InteractiveSlideType; o
       <Field label="Props (JSON)">
         <TextArea value={JSON.stringify(slide.props, null, 2)} onChange={v => { try { onChange({ ...slide, props: JSON.parse(v) }) } catch { /* invalid json */ } }} rows={6} />
       </Field>
+    </div>
+  )
+}
+
+function PollEditor({ slide, onChange }: { slide: PollSlide; onChange: (s: PollSlide) => void }) {
+  const updateOption = (index: number, value: string) => {
+    const options = [...(slide.options || [])]
+    options[index] = value
+    onChange({ ...slide, options })
+  }
+  const addOption = () => onChange({ ...slide, options: [...(slide.options || []), ''] })
+  const removeOption = (index: number) => onChange({ ...slide, options: (slide.options || []).filter((_, i) => i !== index) })
+
+  return (
+    <div className="space-y-4">
+      <Field label="Question"><TextInput value={slide.question} onChange={v => onChange({ ...slide, question: v })} placeholder="What do you think about...?" large /></Field>
+      <Field label="Poll Type">
+        <Select
+          value={slide.pollType}
+          onChange={v => onChange({ ...slide, pollType: v as PollSlide['pollType'] })}
+          options={[
+            { value: 'multiple_choice', label: 'Multiple Choice' },
+            { value: 'word_cloud', label: 'Word Cloud' },
+            { value: 'rating', label: 'Rating Scale' },
+            { value: 'open_ended', label: 'Open-Ended' },
+          ]}
+        />
+      </Field>
+
+      {slide.pollType === 'multiple_choice' && (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-slate-500">Options</label>
+          {(slide.options || []).map((opt, i) => (
+            <div key={i} className="flex gap-2">
+              <span className="text-cyan-400 font-bold text-sm mt-2">{String.fromCharCode(65 + i)}.</span>
+              <input type="text" value={opt} onChange={e => updateOption(i, e.target.value)} placeholder={`Option ${i + 1}`} className="admin-input flex-1" />
+              <button onClick={() => removeOption(i)} className="text-slate-600 hover:text-red-400 px-1">&times;</button>
+            </div>
+          ))}
+          <button onClick={addOption} className="text-xs text-cyan-400 hover:text-cyan-300">+ Add option</button>
+        </div>
+      )}
+
+      {slide.pollType === 'rating' && (
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Min Value">
+            <input type="number" value={slide.settings?.ratingMin ?? 1} onChange={e => onChange({ ...slide, settings: { ...slide.settings, ratingMin: parseInt(e.target.value) || 1 } })} className="admin-input w-full" />
+          </Field>
+          <Field label="Max Value">
+            <input type="number" value={slide.settings?.ratingMax ?? 5} onChange={e => onChange({ ...slide, settings: { ...slide.settings, ratingMax: parseInt(e.target.value) || 5 } })} className="admin-input w-full" />
+          </Field>
+        </div>
+      )}
+
+      <label className="flex items-center gap-2 text-sm text-slate-400">
+        <input type="checkbox" checked={slide.settings?.showResultsLive !== false} onChange={e => onChange({ ...slide, settings: { ...slide.settings, showResultsLive: e.target.checked } })} className="rounded" />
+        Show results live on screen
+      </label>
+
+      {slide.pollSessionId && (
+        <div className="p-3 rounded-lg text-xs" style={{ background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.2)' }}>
+          <span className="text-cyan-400 font-medium">Poll Session Linked</span>
+          <p className="text-slate-500 mt-1 font-mono text-[10px]">{slide.pollSessionId}</p>
+        </div>
+      )}
     </div>
   )
 }
@@ -296,6 +485,7 @@ export default function SlideEditorPanel({ slide, onChange }: Props) {
       case 'comparison': return <ComparisonEditor slide={slide as ComparisonSlide} onChange={onChange as (s: ComparisonSlide) => void} />
       case 'interactive': return <InteractiveEditor slide={slide as InteractiveSlideType} onChange={onChange as (s: InteractiveSlideType) => void} />
       case 'closing': return <ClosingEditor slide={slide as ClosingSlide} onChange={onChange as (s: ClosingSlide) => void} />
+      case 'poll': return <PollEditor slide={slide as PollSlide} onChange={onChange as (s: PollSlide) => void} />
       default: return <p className="text-slate-500">Unknown slide type</p>
     }
   }

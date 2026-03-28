@@ -9,7 +9,7 @@ export default function ContentSlide({ slide }: { slide: ContentSlideType }) {
   if (hasImage && imgPosition !== 'bottom') {
     const isLeft = imgPosition === 'left'
     return (
-      <div className={`flex h-full ${isLeft ? 'flex-row-reverse' : 'flex-row'} items-center gap-[4%] px-[5%] py-[5%]`}>
+      <div className={`slide-animate flex h-full ${isLeft ? 'flex-row-reverse' : 'flex-row'} items-center gap-[4%] px-[5%] py-[5%]`}>
         <div className="flex-1 min-w-0">
           <h2 className="text-[2.8rem] font-bold text-white mb-6">{slide.heading}</h2>
           <div
@@ -25,7 +25,7 @@ export default function ContentSlide({ slide }: { slide: ContentSlideType }) {
   }
 
   return (
-    <div className="flex flex-col justify-center h-full px-[5%] py-[5%]">
+    <div className="slide-animate flex flex-col justify-center h-full px-[5%] py-[5%]">
       <h2 className="text-[2.8rem] font-bold text-white mb-6">{slide.heading}</h2>
       <div
         className="text-[1.4rem] leading-relaxed text-slate-300 slide-body"

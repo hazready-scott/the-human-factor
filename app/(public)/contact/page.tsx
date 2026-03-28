@@ -35,7 +35,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold mb-2 text-white">Connect</h3>
-                  <a href="https://www.linkedin.com/company/the-human-factor-consulting/" target="_blank" rel="noopener noreferrer" className="text-brand-teal hover:text-brand-teal-dark transition-colors text-sm">LinkedIn &rarr;</a>
+                  <a href="https://linkedin.com/in/sdramey" target="_blank" rel="noopener noreferrer" className="text-brand-teal hover:text-brand-teal-dark transition-colors text-sm">LinkedIn &rarr;</a>
                 </div>
                 <div>
                   <h3 className="font-semibold mb-2 text-white">What to Expect</h3>

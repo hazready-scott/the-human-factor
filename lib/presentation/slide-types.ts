@@ -12,6 +12,7 @@ export type SlideType =
   | 'comparison'
   | 'interactive'
   | 'closing'
+  | 'poll'
 
 export interface SlideBackground {
   color?: string
@@ -35,12 +36,19 @@ export interface TitleSlide extends BaseSlide {
   author?: string
   date?: string
   logo?: string
+  image?: {
+    url: string
+    alt?: string
+    position: 'background' | 'right' | 'left'
+    opacity?: number
+  }
 }
 
 export interface SectionSlide extends BaseSlide {
   type: 'section'
   heading: string
   subheading?: string
+  image?: { url: string; alt?: string; position: 'background' | 'right'; opacity?: number }
 }
 
 export interface ContentSlide extends BaseSlide {
@@ -84,6 +92,7 @@ export interface QuoteSlide extends BaseSlide {
   quote: string
   attribution?: string
   role?: string
+  image?: { url: string; alt?: string }
 }
 
 export interface DataSlide extends BaseSlide {
@@ -131,6 +140,23 @@ export interface ClosingSlide extends BaseSlide {
     website?: string
     linkedin?: string
   }
+  qrCodeUrl?: string
+}
+
+export interface PollSlide extends BaseSlide {
+  type: 'poll'
+  question: string
+  pollType: 'multiple_choice' | 'word_cloud' | 'rating' | 'open_ended'
+  options?: string[]
+  settings?: {
+    allowMultiple?: boolean
+    showResultsLive?: boolean
+    ratingMin?: number
+    ratingMax?: number
+    ratingLabels?: { min: string; max: string }
+    autoCloseAfter?: number
+  }
+  pollSessionId?: string
 }
 
 export type Slide =
@@ -145,11 +171,12 @@ export type Slide =
   | ComparisonSlide
   | InteractiveSlide
   | ClosingSlide
+  | PollSlide
 
 // ── Presentation Settings ──
 
 export interface PresentationSettings {
-  theme: 'default' | 'dark' | 'light'
+  theme: 'default' | 'dark' | 'light' | 'midnight' | 'forest' | 'warm' | 'academic'
   transition: 'fade' | 'slide' | 'none'
   transitionSpeed: number
   aspectRatio: '16:9' | '4:3'
@@ -157,6 +184,13 @@ export interface PresentationSettings {
   showProgressBar: boolean
   brandColor: string
   estimatedMinutes: number
+  fontFamily?: string
+  headingFontFamily?: string
+  baseFontSize?: number
+  headingColor?: string
+  bodyColor?: string
+  credentials?: string
+  disclosures?: string
 }
 
 export interface Presentation {
@@ -196,6 +230,7 @@ export const SLIDE_TYPE_META: Record<SlideType, { label: string; description: st
   comparison: { label: 'Comparison', description: 'Before / after' },
   interactive: { label: 'Interactive', description: 'Custom element' },
   closing: { label: 'Closing', description: 'CTA / contact' },
+  poll: { label: 'Poll', description: 'Live audience poll' },
 }
 
 // ── Factory for creating new slides ──
@@ -226,5 +261,7 @@ export function createSlide(type: SlideType): Slide {
       return { ...base, type: 'interactive', component: '', props: {} }
     case 'closing':
       return { ...base, type: 'closing', heading: '' }
+    case 'poll':
+      return { ...base, type: 'poll', question: '', pollType: 'multiple_choice', options: ['Option A', 'Option B', 'Option C'] }
   }
 }
