@@ -183,8 +183,8 @@ export default function ArticleEditor({ article: initial, mode }: { article?: Ar
       return
     }
 
-    if (file.size > 4 * 1024 * 1024) {
-      alert('File too large. Maximum 4MB.')
+    if (file.size > 2 * 1024 * 1024) {
+      alert('File too large. Maximum 2MB. Compress or resize your image first.')
       return
     }
 
@@ -194,6 +194,13 @@ export default function ArticleEditor({ article: initial, mode }: { article?: Ar
       formData.append('file', file)
 
       const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+
+      if (res.status === 413) {
+        alert('File too large for server. Try a smaller image (under 2MB).')
+        setUploading(false)
+        return
+      }
+
       const data = await res.json()
 
       if (!res.ok) {

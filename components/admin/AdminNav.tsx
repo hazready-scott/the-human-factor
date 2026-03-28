@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, FileText, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, FileText, LogOut, Presentation } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 const links = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/contacts', label: 'Contacts', icon: Users },
+  { href: '/admin/presentations', label: 'Presentations', icon: Presentation },
   { href: '/admin/articles', label: 'Articles', icon: FileText },
 ]
 

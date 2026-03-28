@@ -107,13 +107,88 @@ Article title: ${context.title}
 Article content: ${context.content?.substring(0, 1000)}`
         break
 
+      // ── Presentation AI Actions ──
+
+      case 'presentation_outline':
+        userPrompt = `Generate a complete presentation slide deck as a JSON array.
+
+Topic: "${context.topic || context.title}"
+${context.keyPoints ? `Key points to cover:\n${context.keyPoints}` : ''}
+${context.audience ? `Target audience: ${context.audience}` : ''}
+${context.tone ? `Tone: ${context.tone}` : ''}
+${context.duration ? `Duration: ${context.duration} minutes (aim for 1 slide per 2 minutes = ~${Math.round((context.duration || 30) / 2)} slides)` : 'Aim for ~15 slides.'}
+
+Rules for great presentations:
+- One core idea per slide, maximum
+- Favor key phrases and mental triggers over walls of text
+- Body text should be HTML fragments (<p>, <strong>, <em>, <ul>, <li>) — keep it concise
+- Speaker notes contain the talking points; slides contain the triggers
+- Every presentation needs a narrative arc: problem > context > insight > solution > call to action
+- Start with a title slide and end with a closing slide
+- Use section slides to break up major topics
+
+Return ONLY valid JSON (no markdown code blocks) as an array of slide objects. Each slide must have:
+- "id": a unique string (use simple ids like "slide-1", "slide-2", etc.)
+- "type": one of "title", "section", "content", "two-column", "image", "quote", "data", "list", "comparison", "closing"
+- Type-specific fields (title slide needs "title", "subtitle", "author", "date"; content needs "heading", "body"; list needs "heading", "items" array with {text, detail}; quote needs "quote", "attribution"; closing needs "heading", "body", optionally "cta" and "contact")
+- Optional "notes": speaker notes for this slide`
+        break
+
+      case 'slide_content':
+        userPrompt = `Generate a single presentation slide as JSON.
+Type: ${context.slideType}
+Context/topic: ${context.context || 'General'}
+${context.previousSlide ? `Previous slide was about: ${JSON.stringify(context.previousSlide).substring(0, 200)}` : ''}
+
+Return ONLY valid JSON (no markdown code blocks) for one slide object with "id", "type": "${context.slideType}", and all required fields for that type. Include "notes" with speaker talking points.`
+        break
+
+      case 'slide_refine':
+        userPrompt = `Refine this presentation slide based on the instruction below.
+
+Current slide:
+${JSON.stringify(context.slide, null, 2)}
+
+Instruction: ${context.instruction}
+
+Return ONLY valid JSON (no markdown code blocks) for the updated slide. Keep the same "type" and "id". Improve the content based on the instruction.`
+        break
+
+      case 'presentation_social':
+        userPrompt = `Generate a LinkedIn post for sharing this presentation.
+
+Title: ${context.title}
+Description: ${context.description || ''}
+URL: ${context.url || ''}
+
+Return ONLY valid JSON (no markdown code blocks):
+{
+  "postText": "The LinkedIn post text (2-3 paragraphs, professional but engaging, include the URL)",
+  "hashtags": "#relevant #hashtags #separated #by #spaces"
+}`
+        break
+
+      case 'presentation_seo':
+        userPrompt = `Generate SEO metadata for this presentation.
+
+Title: ${context.title}
+First few slides: ${JSON.stringify(context.slides || []).substring(0, 1500)}
+
+Return ONLY valid JSON (no markdown code blocks):
+{
+  "seo_title": "SEO title (50-60 chars)",
+  "seo_description": "Meta description (150-160 chars)",
+  "seo_keywords": "comma, separated, keywords"
+}`
+        break
+
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
+      max_tokens: action === 'presentation_outline' ? 8192 : 4096,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userPrompt }],
     })
@@ -122,7 +197,7 @@ Article content: ${context.content?.substring(0, 1000)}`
     const result = textBlock ? textBlock.text : ''
 
     // Parse JSON responses
-    if (['seo', 'concepts', 'full_article'].includes(action)) {
+    if (['seo', 'concepts', 'full_article', 'presentation_outline', 'slide_content', 'slide_refine', 'presentation_social', 'presentation_seo'].includes(action)) {
       try {
         const parsed = JSON.parse(result)
         return NextResponse.json({ result: parsed, type: 'json' })

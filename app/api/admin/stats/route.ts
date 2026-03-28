@@ -6,10 +6,11 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const [contacts, assessments, articles] = await Promise.all([
+  const [contacts, assessments, articles, presentations] = await Promise.all([
     supabase.from('contacts').select('id, status, source, created_at'),
     supabase.from('aria_assessments').select('id, created_at'),
     supabase.from('articles').select('id, status'),
+    supabase.from('presentations').select('id, status'),
   ])
 
   const now = new Date()
@@ -18,6 +19,7 @@ export async function GET() {
   const contactList = contacts.data || []
   const assessmentList = assessments.data || []
   const articleList = articles.data || []
+  const presentationList = presentations.data || []
 
   return NextResponse.json({
     contacts: {
@@ -46,6 +48,13 @@ export async function GET() {
       total: articleList.length,
       published: articleList.filter(a => a.status === 'published').length,
       draft: articleList.filter(a => a.status === 'draft').length,
+    },
+    presentations: {
+      total: presentationList.length,
+      published: presentationList.filter(p => p.status === 'published').length,
+      draft: presentationList.filter(p => p.status === 'draft').length,
+      private: presentationList.filter(p => p.status === 'private').length,
+      shareable: presentationList.filter(p => p.status === 'shareable').length,
     },
   })
 }

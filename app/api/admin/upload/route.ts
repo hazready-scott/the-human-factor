@@ -32,9 +32,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid file type. Use JPEG, PNG, WebP, or GIF.' }, { status: 400 })
     }
 
-    // Validate size (4MB)
-    if (file.size > 4 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large. Maximum 4MB.' }, { status: 400 })
+    // Validate size (2MB to stay well within Vercel limits)
+    if (file.size > 2 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File too large. Maximum 2MB.' }, { status: 400 })
     }
 
     const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
