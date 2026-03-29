@@ -16,38 +16,78 @@ export async function POST(request: Request) {
   if (!prompt) return NextResponse.json({ error: 'Missing prompt' }, { status: 400 })
 
   try {
-    // Use Gemini 2.0 Flash with image generation capability
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `Generate a professional presentation slide background image for this concept: ${prompt}. The image must contain absolutely NO text, NO words, NO letters, NO numbers. It should be high quality, clean, modern, and suitable for a 16:9 presentation slide.`
-            }]
-          }],
-          generationConfig: {
-            responseModalities: ['TEXT', 'IMAGE'],
-          },
-        }),
-      }
-    )
+    const imagePrompt = `Generate a professional presentation slide background image for this concept: ${prompt}. The image must contain absolutely NO text, NO words, NO letters, NO numbers. It should be high quality, clean, modern, and suitable for a 16:9 presentation slide.`
 
-    if (!res.ok) {
-      const errText = await res.text()
-      console.error('Gemini API error:', res.status, errText)
-      return NextResponse.json({ error: `Image generation error: ${res.status}` }, { status: 500 })
+    // Try Gemini models with image generation capability
+    const models = [
+      'gemini-2.0-flash-preview-image-generation',
+      'gemini-2.0-flash-exp',
+      'imagen-3.0-generate-002',
+    ]
+
+    let res: Response | null = null
+    let usedModel = ''
+    const errors: string[] = []
+
+    for (const model of models) {
+      const isImagen = model.startsWith('imagen')
+
+      const body = isImagen
+        ? {
+            instances: [{ prompt: imagePrompt }],
+            parameters: { sampleCount: 1, aspectRatio: '16:9' },
+          }
+        : {
+            contents: [{ parts: [{ text: imagePrompt }] }],
+            generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+          }
+
+      const action = isImagen ? 'predict' : 'generateContent'
+
+      const attempt = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:${action}?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }
+      )
+
+      console.log(`Image gen model ${model}: ${attempt.status}`)
+
+      if (attempt.status === 404) {
+        errors.push(`${model}: 404`)
+        continue
+      }
+      if (!attempt.ok) {
+        const errText = await attempt.text()
+        errors.push(`${model}: ${attempt.status} — ${errText.substring(0, 200)}`)
+        continue
+      }
+
+      res = attempt
+      usedModel = model
+      break
     }
+
+    if (!res) {
+      console.error('All image models failed:', errors.join(' | '))
+      return NextResponse.json({
+        error: 'Image generation unavailable — all models failed',
+        details: errors,
+      }, { status: 500 })
+    }
+
+    console.log('Image generated with model:', usedModel)
 
     const data = await res.json()
 
-    // Find the image part in the response
-    const candidates = data.candidates || []
+    // Find the image part — Gemini and Imagen have different response shapes
     let imageData: string | null = null
     let mimeType = 'image/png'
 
+    // Gemini format: candidates[].content.parts[].inlineData
+    const candidates = data.candidates || []
     for (const candidate of candidates) {
       const parts = candidate.content?.parts || []
       for (const part of parts) {
@@ -58,6 +98,12 @@ export async function POST(request: Request) {
         }
       }
       if (imageData) break
+    }
+
+    // Imagen format: predictions[].bytesBase64Encoded
+    if (!imageData && data.predictions?.[0]?.bytesBase64Encoded) {
+      imageData = data.predictions[0].bytesBase64Encoded
+      mimeType = data.predictions[0].mimeType || 'image/png'
     }
 
     if (!imageData) {
