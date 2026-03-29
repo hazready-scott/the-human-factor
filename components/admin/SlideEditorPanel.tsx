@@ -59,6 +59,7 @@ function ImageUploadField({ label, value, onChange, slideContext }: { label: str
   const [suggesting, setSuggesting] = useState(false)
   const [suggestions, setSuggestions] = useState<Array<{ concept: string; searchTerms: string; style: string }> | null>(null)
   const [searching, setSearching] = useState(false)
+  const [generating, setGenerating] = useState(false)
   const [searchResults, setSearchResults] = useState<Array<{ id: string; url: string; thumb: string; alt: string; credit: string; creditLink: string }> | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -114,6 +115,25 @@ function ImageUploadField({ label, value, onChange, slideContext }: { label: str
     setSuggestions(null)
   }
 
+  const handleGenerate = async (concept: string) => {
+    setGenerating(true)
+    try {
+      const res = await fetch('/api/admin/image-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: concept }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        onChange(data.url)
+        setSuggestions(null)
+      } else {
+        alert(data.error || 'Generation failed')
+      }
+    } catch { alert('Generation failed') }
+    setGenerating(false)
+  }
+
   return (
     <Field label={label}>
       <div className="space-y-2">
@@ -132,29 +152,42 @@ function ImageUploadField({ label, value, onChange, slideContext }: { label: str
           )}
         </div>
 
-        {/* AI Suggestions — click one to search for images */}
+        {/* AI Suggestions — search stock photos or generate with AI */}
         {suggestions && !searchResults && (
           <div className="space-y-2 mt-2">
             <p className="text-[10px] text-slate-600 uppercase tracking-wider">Choose an image concept</p>
             {suggestions.map((s, i) => (
-              <button
-                key={i}
-                onClick={() => handleSearch(s.searchTerms)}
-                className="w-full text-left p-2.5 rounded-lg bg-white/5 border border-white/10 hover:border-violet-500/40 hover:bg-violet-500/10 transition-colors space-y-1"
-              >
+              <div key={i} className="p-2.5 rounded-lg bg-white/5 border border-white/10 space-y-2">
                 <p className="text-xs text-slate-300">{s.concept}</p>
                 <p className="text-[10px] text-violet-400/70">{s.style}</p>
-              </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleSearch(s.searchTerms)}
+                    disabled={generating}
+                    className="flex-1 px-2 py-1.5 rounded text-[10px] font-medium bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-colors disabled:opacity-50"
+                  >
+                    Search Photos
+                  </button>
+                  <button
+                    onClick={() => handleGenerate(s.concept)}
+                    disabled={generating}
+                    className="flex-1 px-2 py-1.5 rounded text-[10px] font-medium bg-violet-500/20 text-violet-400 hover:bg-violet-500/30 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+                  >
+                    {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    Generate AI
+                  </button>
+                </div>
+              </div>
             ))}
             <button onClick={() => setSuggestions(null)} className="text-[10px] text-slate-600 hover:text-slate-400">Dismiss</button>
           </div>
         )}
 
-        {/* Searching indicator */}
-        {searching && (
+        {/* Searching / generating indicator */}
+        {(searching || generating) && (
           <div className="flex items-center gap-2 py-3 justify-center">
             <Loader2 className="w-4 h-4 animate-spin text-violet-400" />
-            <span className="text-xs text-slate-500">Searching images...</span>
+            <span className="text-xs text-slate-500">{generating ? 'Generating image with AI...' : 'Searching images...'}</span>
           </div>
         )}
 
