@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-const inputClass = "w-full px-4 py-3 rounded-lg text-sm text-slate-200 transition-colors placeholder:text-slate-600 focus:outline-none focus:border-[#06b6d4]"
+const inputClass = "w-full px-4 py-3 rounded-lg text-sm text-slate-200 transition-colors placeholder:text-slate-600 focus:outline-none focus:border-[#c9944a]"
 const inputStyle = { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }
 
 export default function ContactForm() {
@@ -21,7 +21,7 @@ export default function ContactForm() {
   if (state === 'success') {
     return (
       <div className="card text-center py-12">
-        <div className="text-4xl mb-4 text-brand-teal">&#10003;</div>
+        <div className="text-4xl mb-4 text-[#c9944a]">&#10003;</div>
         <h3 className="text-xl font-bold text-white mb-2">Message Sent</h3>
         <p className="text-slate-400">Thank you! We&apos;ve sent a confirmation to your email and will get back to you within 24 hours.</p>
       </div>

@@ -37,7 +37,7 @@ export default function Header() {
           {navItems.map(link => (
             <Link key={link.href} href={link.href} className="text-sm font-medium text-slate-400 hover:text-white transition-colors">{link.label}</Link>
           ))}
-          <Link href="#contact" className="btn-primary text-sm">Free AI Readiness Scorecard</Link>
+          <Link href="/assessment" className="btn-primary text-sm">AI Readiness Assessment</Link>
         </nav>
 
         <button className="lg:hidden p-2" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
@@ -54,7 +54,7 @@ export default function Header() {
           {navItems.map(link => (
             <Link key={link.href} href={link.href} className="block text-sm font-medium text-slate-300" onClick={() => setMenuOpen(false)}>{link.label}</Link>
           ))}
-          <Link href="#contact" className="btn-primary text-sm w-full text-center" onClick={() => setMenuOpen(false)}>Free AI Readiness Scorecard</Link>
+          <Link href="/assessment" className="btn-primary text-sm w-full text-center" onClick={() => setMenuOpen(false)}>AI Readiness Assessment</Link>
         </nav>
       )}
     </header>

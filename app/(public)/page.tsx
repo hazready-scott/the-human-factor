@@ -1,43 +1,39 @@
 import Link from 'next/link'
 import AssociateProfiles from '@/components/AssociateProfiles'
+import ContactForm from '@/components/ContactForm'
 
 const ariaPhases = [
   {
     num: 1,
-    name: 'Orient',
-    desc: 'Understand the business, people, and context before recommending anything. Map the decision-making architecture, leadership dynamics, and organizational readiness.',
+    name: 'Assess',
+    desc: 'Understand your organization, people, and context. Map decision-making architecture, workflows, leadership dynamics, and readiness for change. Identify where systems are underperforming and why.',
   },
   {
     num: 2,
-    name: 'Assess',
-    desc: 'Analyze the work system. Map workflows, identify friction points, perform cognitive task analysis on critical decisions, and score every AI opportunity on suitability, impact, effort, and risk.',
+    name: 'Redesign',
+    desc: 'Analyze friction points, perform cognitive task analysis, and design better systems. Define improvement opportunities — including where AI and automation create genuine value, and where they don\u2019t.',
   },
   {
     num: 3,
-    name: 'Design',
-    desc: 'Select the right interventions. Define human-AI collaboration models. Choose tools. Set success metrics. Build the implementation blueprint.',
+    name: 'Implement',
+    desc: 'Build, test, and validate. Deploy process changes, new tools, and technology with structured change management. Pilot with real users in real workflows before scaling.',
   },
   {
     num: 4,
-    name: 'Build',
-    desc: 'Implement, test, and validate. Pilot with real users in real workflows. Evaluate rigorously against defined success criteria.',
-  },
-  {
-    num: 5,
-    name: 'Embed',
-    desc: 'Adoption is not deployment. Train people. Build governance. Measure outcomes. Create the conditions for long-term success.',
+    name: 'Advance',
+    desc: 'Adoption is not deployment. Train people, build governance, measure outcomes, and create the conditions for continuous improvement. Systems that stick are systems designed for the people who use them.',
   },
 ]
 
 const services = [
   {
-    title: 'AI Readiness Scorecard',
+    title: 'AI Readiness Assessment',
     tag: 'Free',
-    desc: 'A 45-minute diagnostic conversation that gives you a clear picture of where you stand. You\u2019ll receive a personalized readiness score across six dimensions, three specific quick wins, and an honest assessment of what comes next. No pitch. No obligation.',
+    desc: 'A comprehensive self-assessment that evaluates your organization across six key dimensions of AI readiness. You\u2019ll receive a personalized score, actionable recommendations, and an honest picture of where you stand. Takes about 5 minutes — no commitment required.',
   },
   {
     title: 'ARIA Assessment',
-    desc: 'A structured deep-dive into your organization\u2019s workflows, decision-making, and technology landscape. Deliverables include a work system analysis, scored AI opportunity map, council-ready presentation package, and complimentary 90-day access to HazReady, our AI-powered emergency intelligence platform.',
+    desc: 'A structured deep-dive into your organization\u2019s workflows, decision-making, and technology landscape. Deliverables include a work system analysis, scored improvement opportunity map, council-ready presentation package, and complimentary 90-day access to HazReady, our AI-powered emergency intelligence platform.',
   },
   {
     title: 'ARIA Blueprint',
@@ -49,14 +45,14 @@ const services = [
   },
   {
     title: 'Ongoing Advisory',
-    desc: 'Monthly retainer for organizations that want a trusted advisor on AI strategy, vendor evaluation, and continuous improvement.',
+    desc: 'Monthly retainer for organizations that want a trusted advisor on systems improvement, AI strategy, vendor evaluation, and continuous improvement.',
   },
 ]
 
 const specialties = [
   {
     title: 'Emergency Services & Public Safety',
-    desc: 'Fire departments, paramedic services, emergency management offices, and public safety communications agencies. We understand your world because we\u2019ve spent 30 years working in it, from the front line to the executive suite.',
+    desc: 'Fire departments, paramedic services, emergency management offices, and public safety communications agencies. We understand your world because we\u2019ve spent decades working in it, from the front line to the executive suite.',
   },
   {
     title: 'AI Strategy & Systems Improvement',
@@ -89,12 +85,12 @@ export default function Home() {
             Applied science. Better systems. AI strategy grounded in how people actually work.
           </p>
           <p className="text-base md:text-lg text-slate-400 max-w-2xl mx-auto mb-10">
-            Most AI implementations fail because they ignore the human element. We take a different approach. Grounded in human factors engineering, systems design, and 30 years of operational experience in emergency services, The Human Factor helps organizations adopt AI in ways that genuinely improve how people work, decide, and deliver.
+            Most AI implementations fail because they ignore the human element. We take a different approach. Grounded in human factors engineering, systems design, and decades of operational experience in emergency services and healthcare, The Human Factor helps organizations improve their organizational systems and adopt AI in ways that genuinely improve how people work, decide, and deliver.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="#contact" className="btn-primary text-lg px-8 py-4">
-              Book a Free AI Readiness Scorecard Call
-            </a>
+            <Link href="/assessment" className="btn-primary text-lg px-8 py-4">
+              Take the AI Readiness Assessment
+            </Link>
             <a href="#aria" className="btn-secondary text-lg px-8 py-4">
               Learn about the ARIA Method &rarr;
             </a>
@@ -110,10 +106,10 @@ export default function Home() {
           <div className="accent-bar mb-8" />
           <div className="space-y-5 text-slate-400 text-base leading-relaxed">
             <p>
-              The Human Factor is the advisory practice of Scott Ramey, a practitioner-scholar who has spent three decades at the intersection of emergency services leadership, healthcare quality, and technology innovation.
+              The Human Factor is an advisory practice built at the intersection of emergency services leadership, healthcare quality, and technology innovation. Our team brings decades of combined experience — from front-line operations to the executive suite — alongside active research programs at leading Canadian universities.
             </p>
             <p>
-              As the Principal Investigator on a $2M federally funded AI research initiative with Defence Research and Development Canada, a PhD candidate in Systems Design Engineering and Human Factors at the University of Waterloo, and a veteran fire service executive who has led organizations through accreditation, cultural transformation, and complex change management, Scott brings something rare to practice: the ability to bridge academic rigor and operational reality.
+              Our work is backed by significant research investment, including a $2M federally funded AI research initiative with Defence Research and Development Canada (DRDC) and a Social Sciences and Humanities Research Council (SSHRC) supported study on technology adoption in high-stakes environments. This research, conducted through the University of Waterloo&apos;s Systems Design Engineering program, directly informs how we approach every engagement.
             </p>
             <p>
               The Human Factor exists because the gap between what AI promises and what AI delivers in high-stakes environments is almost always a human problem, not a technology problem. We close that gap.
@@ -128,19 +124,19 @@ export default function Home() {
           <div className="text-center mb-12">
             <p className="eyebrow">Our Methodology</p>
             <h2 className="section-title">The ARIA Method</h2>
-            <p className="text-[#c9944a] font-medium text-lg mb-4">AI Readiness and Implementation Approach</p>
+            <p className="text-[#c9944a] font-medium text-lg mb-4">Assess. Redesign. Implement. Advance.</p>
             <p className="section-subtitle mx-auto">
-              ARIA is our proprietary five-phase methodology for helping organizations move from AI curiosity to operational reality. Developed from research in human factors engineering, naturalistic decision-making, and systems design, ARIA ensures that every AI implementation is designed around the people who will actually use it.
+              ARIA is our structured approach to systems improvement and organizational transformation. Whether the solution involves AI, process redesign, workflow automation, or all three, ARIA ensures every change is designed around the people who will actually use it — grounded in human factors engineering, naturalistic decision-making, and systems design research.
             </p>
           </div>
 
           {/* Desktop: Horizontal Stepper */}
           <div className="hidden md:block relative mb-12">
             {/* Connecting line */}
-            <div className="absolute top-6 left-[10%] right-[10%] h-0.5 bg-[#c9944a]/30" />
+            <div className="absolute top-6 left-[12%] right-[12%] h-0.5 bg-[#c9944a]/30" />
             <div className="flex items-start justify-between">
               {ariaPhases.map((phase) => (
-                <div key={phase.num} className="flex flex-col items-center text-center w-1/5 relative z-10 px-2">
+                <div key={phase.num} className="flex flex-col items-center text-center w-1/4 relative z-10 px-3">
                   <div className="w-12 h-12 rounded-full bg-[#1a2744] border-2 border-[#c9944a] text-white flex items-center justify-center font-bold text-lg shadow-lg">
                     {phase.num}
                   </div>
@@ -159,7 +155,7 @@ export default function Home() {
                   <div className="w-10 h-10 rounded-full bg-[#1a2744] border-2 border-[#c9944a] text-white flex items-center justify-center font-bold flex-shrink-0">
                     {phase.num}
                   </div>
-                  {phase.num < 5 && <div className="w-0.5 flex-1 bg-[#c9944a]/20 mt-2" />}
+                  {phase.num < 4 && <div className="w-0.5 flex-1 bg-[#c9944a]/20 mt-2" />}
                 </div>
                 <div className="pb-4">
                   <h3 className="font-bold text-white">{phase.name}</h3>
@@ -177,9 +173,9 @@ export default function Home() {
           </div>
 
           <div className="text-center">
-            <a href="#contact" className="btn-primary text-lg px-8 py-4">
-              See How Ready You Are &mdash; Book a Free Scorecard Call
-            </a>
+            <Link href="/assessment" className="btn-primary text-lg px-8 py-4">
+              Take the Free AI Readiness Assessment
+            </Link>
           </div>
         </div>
       </section>
@@ -253,9 +249,6 @@ export default function Home() {
           <div className="text-center mb-12">
             <p className="eyebrow">Our Team</p>
             <h2 className="section-title">Our Specialists</h2>
-            <p className="section-subtitle mx-auto">
-              The Human Factor brings together experienced practitioners from emergency services, healthcare, and technology. Each member of our team is a specialist who has worked in the field — not just studied it.
-            </p>
           </div>
           <AssociateProfiles />
         </div>
@@ -263,24 +256,32 @@ export default function Home() {
 
       {/* ===== CONTACT ===== */}
       <section id="contact" className="section-pad section-elevated">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="accent-bar mx-auto mb-4" />
-          <h2 className="section-title">Let&apos;s Talk About What You&apos;re Trying to Solve</h2>
-          <p className="section-subtitle mx-auto mb-8">
-            Whether you&apos;re exploring AI for the first time, navigating a technology procurement, or building an organizational strategy, a conversation is always the best starting point.
-          </p>
-          <div className="space-y-4">
-            <a href="#contact" className="btn-primary text-lg px-8 py-4">
-              Book a Free AI Readiness Scorecard Call
-            </a>
-            <div className="flex items-center justify-center gap-6 mt-6">
-              <a href="mailto:scott@thehumanfactor.ca" className="text-sm text-slate-400 hover:text-[#c9944a] transition-colors">
-                scott@thehumanfactor.ca
-              </a>
-              <a href="https://www.linkedin.com/in/sdramey/" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-400 hover:text-[#c9944a] transition-colors">
-                LinkedIn
-              </a>
+        <div className="max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12">
+            <div>
+              <div className="accent-bar mb-4" />
+              <h2 className="section-title">Let&apos;s Talk About What You&apos;re Trying to Solve</h2>
+              <p className="text-slate-400 mt-4 mb-8">
+                Whether you&apos;re exploring AI for the first time, navigating a technology procurement, or building an organizational strategy, a conversation is always the best starting point.
+              </p>
+              <div className="space-y-4 text-sm">
+                <div>
+                  <h3 className="font-semibold text-white mb-1">Email</h3>
+                  <a href="mailto:info@thehumanfactor.ca" className="text-[#c9944a] hover:text-[#d4a85c] transition-colors">info@thehumanfactor.ca</a>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white mb-1">Location</h3>
+                  <p className="text-slate-400">Hamilton, Ontario, Canada</p>
+                  <p className="text-slate-500 text-xs">Serving organizations across North America</p>
+                </div>
+                <div>
+                  <a href="https://www.linkedin.com/in/sdramey/" target="_blank" rel="noopener noreferrer" className="text-[#c9944a] hover:text-[#d4a85c] transition-colors">
+                    LinkedIn &rarr;
+                  </a>
+                </div>
+              </div>
             </div>
+            <ContactForm />
           </div>
         </div>
       </section>

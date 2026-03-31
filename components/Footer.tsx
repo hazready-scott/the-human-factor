@@ -29,8 +29,8 @@ export default function Footer() {
           </div>
           <div>
             <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-600 mb-4">Get in Touch</h4>
-            <a href="mailto:scott@thehumanfactor.ca" className="text-sm text-slate-400 hover:text-[#c9944a] transition-colors">scott@thehumanfactor.ca</a>
-            <p className="text-sm text-slate-500 mt-2">Waterloo, Ontario, Canada</p>
+            <a href="mailto:info@thehumanfactor.ca" className="text-sm text-slate-400 hover:text-[#c9944a] transition-colors">info@thehumanfactor.ca</a>
+            <p className="text-sm text-slate-500 mt-2">Hamilton, Ontario, Canada</p>
           </div>
         </div>
         <div className="border-t border-white/5 mt-12 pt-8 flex justify-between items-center">
