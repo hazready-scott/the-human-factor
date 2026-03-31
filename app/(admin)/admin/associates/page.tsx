@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Plus, Pencil, Trash2, ExternalLink, ChevronUp, ChevronDown, X, Upload, ImageIcon } from 'lucide-react'
+import { Plus, Pencil, Trash2, ExternalLink, X, Upload, ImageIcon, GripVertical } from 'lucide-react'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface Credential {
   id: string
@@ -151,6 +154,112 @@ function PhotoUpload({ value, onChange }: { value: string; onChange: (url: strin
   )
 }
 
+function SortableCredentialItem({ cred, onUpdate, onRemove }: {
+  cred: Credential
+  onUpdate: (id: string, field: string, value: string | number | boolean | null) => void
+  onRemove: (id: string) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cred.id })
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : undefined }
+
+  return (
+    <div ref={setNodeRef} style={style} className={`rounded-lg p-3 space-y-2 ${cred.is_visible !== false ? 'bg-white/[0.03]' : 'bg-white/[0.01] opacity-50'}`}>
+      <div className="flex items-center gap-2">
+        <button type="button" {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-400 flex-shrink-0 touch-none">
+          <GripVertical size={16} />
+        </button>
+        <input
+          value={cred.label}
+          onChange={e => onUpdate(cred.id, 'label', e.target.value)}
+          placeholder="Credential label..."
+          className="flex-1 min-w-0 text-sm py-2 px-3 rounded bg-white/5 border border-white/10 text-slate-200 focus:outline-none focus:border-[#c9944a]"
+        />
+      </div>
+      <div className="flex items-center gap-2 pl-6">
+        <select
+          value={cred.category}
+          onChange={e => onUpdate(cred.id, 'category', e.target.value)}
+          className="text-xs py-1.5 px-2 rounded bg-white/5 border border-white/10 text-slate-300 focus:outline-none focus:border-[#c9944a]"
+        >
+          <option value="academic">Academic</option>
+          <option value="professional">Professional</option>
+          <option value="award">Award</option>
+          <option value="certification">Certification</option>
+        </select>
+        <input
+          type="number"
+          value={cred.year || ''}
+          onChange={e => onUpdate(cred.id, 'year', e.target.value ? parseInt(e.target.value) : null)}
+          placeholder="Year"
+          className="w-16 text-xs py-1.5 px-2 rounded bg-white/5 border border-white/10 text-slate-300 focus:outline-none focus:border-[#c9944a]"
+        />
+        <label className="flex items-center gap-1 text-xs text-slate-500 cursor-pointer ml-auto">
+          <input type="checkbox" checked={cred.is_visible !== false} onChange={e => onUpdate(cred.id, 'is_visible', e.target.checked)} />
+          Visible
+        </label>
+        <button type="button" onClick={() => onRemove(cred.id)} className="text-slate-600 hover:text-red-400 p-0.5">
+          <X size={14} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function SortablePublicationItem({ pub, onUpdate, onRemove }: {
+  pub: Publication
+  onUpdate: (id: string, field: string, value: string | number | boolean | null) => void
+  onRemove: (id: string) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: pub.id })
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : undefined }
+
+  return (
+    <div ref={setNodeRef} style={style} className={`rounded-lg p-3 space-y-2 ${pub.is_visible !== false ? 'bg-white/[0.03]' : 'bg-white/[0.01] opacity-50'}`}>
+      <div className="flex items-center gap-2">
+        <button type="button" {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-400 flex-shrink-0 touch-none">
+          <GripVertical size={16} />
+        </button>
+        <input
+          value={pub.name}
+          onChange={e => onUpdate(pub.id, 'name', e.target.value)}
+          placeholder="Publication title..."
+          className="flex-1 min-w-0 text-sm py-2 px-3 rounded bg-white/5 border border-white/10 text-slate-200 focus:outline-none focus:border-[#c9944a]"
+        />
+      </div>
+      <div className="grid grid-cols-3 gap-2 pl-6">
+        <input
+          type="number"
+          value={pub.year || ''}
+          onChange={e => onUpdate(pub.id, 'year', e.target.value ? parseInt(e.target.value) : null)}
+          placeholder="Year"
+          className="text-xs py-1.5 px-2 rounded bg-white/5 border border-white/10 text-slate-300 focus:outline-none focus:border-[#c9944a]"
+        />
+        <input
+          value={pub.doi}
+          onChange={e => onUpdate(pub.id, 'doi', e.target.value)}
+          placeholder="DOI (10.xxxx/...)"
+          className="text-xs py-1.5 px-2 rounded bg-white/5 border border-white/10 text-slate-300 focus:outline-none focus:border-[#c9944a]"
+        />
+        <input
+          value={pub.url}
+          onChange={e => onUpdate(pub.id, 'url', e.target.value)}
+          placeholder="URL (https://...)"
+          className="text-xs py-1.5 px-2 rounded bg-white/5 border border-white/10 text-slate-300 focus:outline-none focus:border-[#c9944a]"
+        />
+      </div>
+      <div className="flex items-center gap-2 pl-6">
+        <label className="flex items-center gap-1 text-xs text-slate-500 cursor-pointer">
+          <input type="checkbox" checked={pub.is_visible !== false} onChange={e => onUpdate(pub.id, 'is_visible', e.target.checked)} />
+          Visible
+        </label>
+        <button type="button" onClick={() => onRemove(pub.id)} className="text-slate-600 hover:text-red-400 p-0.5 ml-auto">
+          <X size={14} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function AssociatesPage() {
   const [associates, setAssociates] = useState<Associate[]>([])
   const [loading, setLoading] = useState(true)
@@ -186,13 +295,6 @@ export default function AssociatesPage() {
   const removeCredential = (id: string) => {
     setCredentials(prev => prev.filter(c => c.id !== id))
   }
-  const moveCredential = (index: number, direction: -1 | 1) => {
-    const arr = [...credentials]
-    const ni = index + direction
-    if (ni < 0 || ni >= arr.length) return
-    ;[arr[index], arr[ni]] = [arr[ni], arr[index]]
-    setCredentials(arr)
-  }
 
   // --- Publications ---
   const addPublication = () => {
@@ -204,12 +306,29 @@ export default function AssociatesPage() {
   const removePublication = (id: string) => {
     setPublications(prev => prev.filter(p => p.id !== id))
   }
-  const movePublication = (index: number, direction: -1 | 1) => {
-    const arr = [...publications]
-    const ni = index + direction
-    if (ni < 0 || ni >= arr.length) return
-    ;[arr[index], arr[ni]] = [arr[ni], arr[index]]
-    setPublications(arr)
+
+  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor))
+
+  const handleCredentialDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      setCredentials(prev => {
+        const oldIndex = prev.findIndex(c => c.id === active.id)
+        const newIndex = prev.findIndex(c => c.id === over.id)
+        return arrayMove(prev, oldIndex, newIndex)
+      })
+    }
+  }
+
+  const handlePublicationDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      setPublications(prev => {
+        const oldIndex = prev.findIndex(p => p.id === active.id)
+        const newIndex = prev.findIndex(p => p.id === over.id)
+        return arrayMove(prev, oldIndex, newIndex)
+      })
+    }
   }
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -321,7 +440,7 @@ export default function AssociatesPage() {
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Google Booking Calendar URL</label>
               <input name="booking_url" defaultValue={editing?.booking_url || ''} placeholder="https://calendar.app.google/..." className="admin-input w-full" />
-              <p className="text-[10px] text-slate-600 mt-1">Paste Google Calendar appointment booking link. Displays on public profile page.</p>
+              <p className="text-[10px] text-slate-600 mt-1">Calendly links embed directly on the profile page. Google Calendar and other links open in a new tab as a styled button.</p>
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Specialties (comma-separated)</label>
@@ -340,56 +459,15 @@ export default function AssociatesPage() {
               {credentials.length === 0 ? (
                 <p className="text-xs text-slate-600">No credentials. Click &quot;Add Credential&quot; to start.</p>
               ) : (
-                <div className="space-y-2">
-                  {credentials.map((cred, idx) => (
-                    <div key={cred.id} className={`rounded-lg p-3 space-y-2 ${cred.is_visible !== false ? 'bg-white/[0.03]' : 'bg-white/[0.01] opacity-50'}`}>
-                      {/* Row 1: Label (full width) */}
-                      <input
-                        value={cred.label}
-                        onChange={e => updateCredential(cred.id, 'label', e.target.value)}
-                        placeholder="Credential label..."
-                        className="w-full text-sm py-2 px-3 rounded bg-white/5 border border-white/10 text-slate-200 focus:outline-none focus:border-[#c9944a]"
-                      />
-                      {/* Row 2: Controls */}
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={cred.category}
-                          onChange={e => updateCredential(cred.id, 'category', e.target.value)}
-                          className="text-xs py-1.5 px-2 rounded bg-white/5 border border-white/10 text-slate-300 focus:outline-none focus:border-[#c9944a]"
-                        >
-                          <option value="academic">Academic</option>
-                          <option value="professional">Professional</option>
-                          <option value="award">Award</option>
-                          <option value="certification">Certification</option>
-                        </select>
-                        <input
-                          type="number"
-                          value={cred.year || ''}
-                          onChange={e => updateCredential(cred.id, 'year', e.target.value ? parseInt(e.target.value) : null)}
-                          placeholder="Year"
-                          className="w-16 text-xs py-1.5 px-2 rounded bg-white/5 border border-white/10 text-slate-300 focus:outline-none focus:border-[#c9944a]"
-                        />
-                        <label className="flex items-center gap-1 text-xs text-slate-500 cursor-pointer ml-auto">
-                          <input
-                            type="checkbox"
-                            checked={cred.is_visible !== false}
-                            onChange={e => updateCredential(cred.id, 'is_visible', e.target.checked)}
-                          />
-                          Visible
-                        </label>
-                        <div className="flex items-center gap-0.5">
-                          <button type="button" onClick={() => moveCredential(idx, -1)} disabled={idx === 0}
-                            className="text-slate-600 hover:text-white disabled:opacity-20 p-0.5"><ChevronUp size={14} /></button>
-                          <button type="button" onClick={() => moveCredential(idx, 1)} disabled={idx === credentials.length - 1}
-                            className="text-slate-600 hover:text-white disabled:opacity-20 p-0.5"><ChevronDown size={14} /></button>
-                        </div>
-                        <button type="button" onClick={() => removeCredential(cred.id)} className="text-slate-600 hover:text-red-400 p-0.5">
-                          <X size={14} />
-                        </button>
-                      </div>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCredentialDragEnd}>
+                  <SortableContext items={credentials.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-2">
+                      {credentials.map(cred => (
+                        <SortableCredentialItem key={cred.id} cred={cred} onUpdate={updateCredential} onRemove={removeCredential} />
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </SortableContext>
+                </DndContext>
               )}
 
               {/* Live preview */}
@@ -413,61 +491,15 @@ export default function AssociatesPage() {
               {publications.length === 0 ? (
                 <p className="text-xs text-slate-600">No publications. Click &quot;Add Publication&quot; to start.</p>
               ) : (
-                <div className="space-y-2">
-                  {publications.map((pub, idx) => (
-                    <div key={pub.id} className={`rounded-lg p-3 space-y-2 ${pub.is_visible !== false ? 'bg-white/[0.03]' : 'bg-white/[0.01] opacity-50'}`}>
-                      {/* Row 1: Publication name (full width) */}
-                      <input
-                        value={pub.name}
-                        onChange={e => updatePublication(pub.id, 'name', e.target.value)}
-                        placeholder="Publication title..."
-                        className="w-full text-sm py-2 px-3 rounded bg-white/5 border border-white/10 text-slate-200 focus:outline-none focus:border-[#c9944a]"
-                      />
-                      {/* Row 2: Year, DOI, URL */}
-                      <div className="grid grid-cols-3 gap-2">
-                        <input
-                          type="number"
-                          value={pub.year || ''}
-                          onChange={e => updatePublication(pub.id, 'year', e.target.value ? parseInt(e.target.value) : null)}
-                          placeholder="Year"
-                          className="text-xs py-1.5 px-2 rounded bg-white/5 border border-white/10 text-slate-300 focus:outline-none focus:border-[#c9944a]"
-                        />
-                        <input
-                          value={pub.doi}
-                          onChange={e => updatePublication(pub.id, 'doi', e.target.value)}
-                          placeholder="DOI (10.xxxx/...)"
-                          className="text-xs py-1.5 px-2 rounded bg-white/5 border border-white/10 text-slate-300 focus:outline-none focus:border-[#c9944a]"
-                        />
-                        <input
-                          value={pub.url}
-                          onChange={e => updatePublication(pub.id, 'url', e.target.value)}
-                          placeholder="URL (https://...)"
-                          className="text-xs py-1.5 px-2 rounded bg-white/5 border border-white/10 text-slate-300 focus:outline-none focus:border-[#c9944a]"
-                        />
-                      </div>
-                      {/* Row 3: Controls */}
-                      <div className="flex items-center gap-2">
-                        <label className="flex items-center gap-1 text-xs text-slate-500 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={pub.is_visible !== false}
-                            onChange={e => updatePublication(pub.id, 'is_visible', e.target.checked)}
-                          />
-                          Visible
-                        </label>
-                        <div className="flex items-center gap-0.5 ml-auto">
-                          <button type="button" onClick={() => movePublication(idx, -1)} disabled={idx === 0}
-                            className="text-slate-600 hover:text-white disabled:opacity-20 p-0.5"><ChevronUp size={14} /></button>
-                          <button type="button" onClick={() => movePublication(idx, 1)} disabled={idx === publications.length - 1}
-                            className="text-slate-600 hover:text-white disabled:opacity-20 p-0.5"><ChevronDown size={14} /></button>
-                        </div>
-                        <button type="button" onClick={() => removePublication(pub.id)} className="text-slate-600 hover:text-red-400 p-0.5">
-                          <X size={14} />
-                        </button>
-                      </div>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handlePublicationDragEnd}>
+                  <SortableContext items={publications.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-2">
+                      {publications.map(pub => (
+                        <SortablePublicationItem key={pub.id} pub={pub} onUpdate={updatePublication} onRemove={removePublication} />
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </SortableContext>
+                </DndContext>
               )}
             </div>
 

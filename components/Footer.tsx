@@ -34,7 +34,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="border-t border-white/5 mt-12 pt-8 flex justify-between items-center">
-          <p className="text-sm text-slate-600">&copy; 2026 HazReady Corporation. All rights reserved.</p>
+          <p className="text-sm text-slate-600">&copy; 2026 The Human Factor. All rights reserved.</p>
           <Link href="/admin/login" className="text-xs text-slate-700 hover:text-slate-500 transition-colors">Staff</Link>
         </div>
       </div>

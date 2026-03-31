@@ -240,11 +240,11 @@ export default function Home() {
       {/* ===== HAZREADY ===== */}
       <section id="hazready" className="section-pad section-dark">
         <div className="max-w-4xl mx-auto text-center">
-          <p className="eyebrow">Our Platform</p>
+          <p className="eyebrow">Our Projects</p>
           <h2 className="section-title">Meet HazReady</h2>
           <div className="accent-bar mx-auto mb-8" />
           <p className="text-slate-400 text-base leading-relaxed max-w-2xl mx-auto mb-8">
-            HazReady is our AI-powered emergency intelligence platform, built from the same research that drives our advisory practice. It helps fire departments, emergency management offices, and regional coordinators automate planning, manage resources, and coordinate across agencies. When we recommend AI during an ARIA engagement, HazReady is a shining example of solutions we can identify and implement. It was designed to solve the exact problems our work identifies.
+            HazReady is one of our premiere project outputs, an AI-powered emergency intelligence platform, built from our participation in research methods that drives our advisory practice. It helps fire departments, emergency management offices, and regional coordinators automate planning, manage resources, and coordinate across agencies. When we recommend AI during an ARIA engagement, HazReady is a shining example of how we identify challenges and implement solutions. It was designed to solve the exact problems our work identifies.
           </p>
           <a
             href="https://hazready.ai"
