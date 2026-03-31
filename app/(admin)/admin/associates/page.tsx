@@ -1,7 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, ExternalLink } from 'lucide-react'
+import { Plus, Pencil, Trash2, ExternalLink, ChevronUp, ChevronDown, X } from 'lucide-react'
+
+interface Credential {
+  id: string
+  label: string
+  category: 'academic' | 'professional' | 'award' | 'certification'
+  year: number | null
+}
 
 interface Associate {
   id: string
@@ -9,7 +16,7 @@ interface Associate {
   name: string
   role: string
   title: string
-  credentials: string
+  credentials: Credential[]
   bio: string
   photo_url: string
   email: string
@@ -21,11 +28,33 @@ interface Associate {
   sort_order: number
 }
 
+const CATEGORY_STYLES: Record<string, string> = {
+  academic: 'bg-[#1a2744] text-white border border-[#c9944a]',
+  professional: 'bg-blue-800 text-white',
+  award: 'bg-[#c9944a] text-white',
+  certification: 'bg-green-800 text-white',
+}
+
+function CredentialPreview({ credentials }: { credentials: Credential[] }) {
+  if (credentials.length === 0) return <p className="text-xs text-slate-600">No credentials added</p>
+  return (
+    <div className="flex flex-wrap gap-2">
+      {credentials.map(c => (
+        <span key={c.id} className={`px-3 py-1 rounded-full text-[11px] font-medium ${CATEGORY_STYLES[c.category] || 'bg-slate-700 text-white'}`}>
+          {c.label.length > 40 ? c.label.substring(0, 37) + '...' : c.label}
+          {c.year ? ` (${c.year})` : ''}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 export default function AssociatesPage() {
   const [associates, setAssociates] = useState<Associate[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<Associate | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [credentials, setCredentials] = useState<Credential[]>([])
 
   const fetchAssociates = async () => {
     const res = await fetch('/api/admin/associates')
@@ -35,6 +64,37 @@ export default function AssociatesPage() {
 
   useEffect(() => { fetchAssociates() }, [])
 
+  const openForm = (associate?: Associate) => {
+    setEditing(associate || null)
+    setCredentials(associate?.credentials || [])
+    setShowForm(true)
+  }
+
+  const addCredential = () => {
+    setCredentials(prev => [...prev, {
+      id: crypto.randomUUID(),
+      label: '',
+      category: 'professional',
+      year: null,
+    }])
+  }
+
+  const updateCredential = (id: string, field: string, value: string | number | null) => {
+    setCredentials(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c))
+  }
+
+  const removeCredential = (id: string) => {
+    setCredentials(prev => prev.filter(c => c.id !== id))
+  }
+
+  const moveCredential = (index: number, direction: -1 | 1) => {
+    const newCreds = [...credentials]
+    const newIndex = index + direction
+    if (newIndex < 0 || newIndex >= newCreds.length) return
+    ;[newCreds[index], newCreds[newIndex]] = [newCreds[newIndex], newCreds[index]]
+    setCredentials(newCreds)
+  }
+
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = new FormData(e.currentTarget)
@@ -43,7 +103,7 @@ export default function AssociatesPage() {
       slug: form.get('slug'),
       role: form.get('role'),
       title: form.get('title'),
-      credentials: form.get('credentials'),
+      credentials: credentials.filter(c => c.label.trim()),
       bio: form.get('bio'),
       photo_url: form.get('photo_url'),
       email: form.get('email'),
@@ -60,6 +120,7 @@ export default function AssociatesPage() {
     if (res.ok) {
       setShowForm(false)
       setEditing(null)
+      setCredentials([])
       fetchAssociates()
     }
   }
@@ -77,8 +138,8 @@ export default function AssociatesPage() {
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold text-white">Associates</h1>
         <button
-          onClick={() => { setEditing(null); setShowForm(true) }}
-          className="flex items-center gap-2 px-4 py-2 bg-[#06b6d4] text-white rounded-lg text-sm font-semibold hover:bg-[#0891b2] transition-colors"
+          onClick={() => openForm()}
+          className="flex items-center gap-2 px-4 py-2 bg-[#c9944a] text-white rounded-lg text-sm font-semibold hover:bg-[#b07d3a] transition-colors"
         >
           <Plus size={16} /> Add Associate
         </button>
@@ -98,7 +159,7 @@ export default function AssociatesPage() {
                 <input name="slug" defaultValue={editing?.slug || ''} placeholder="auto-generated" className="admin-input w-full" />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Role</label>
                 <input name="role" defaultValue={editing?.role || ''} placeholder="e.g., Associate, Partner" className="admin-input w-full" />
@@ -106,10 +167,6 @@ export default function AssociatesPage() {
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Title</label>
                 <input name="title" defaultValue={editing?.title || ''} placeholder="e.g., Human Factors Engineer" className="admin-input w-full" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Credentials</label>
-                <input name="credentials" defaultValue={editing?.credentials || ''} placeholder="e.g., PhD, P.Eng." className="admin-input w-full" />
               </div>
             </div>
             <div>
@@ -144,15 +201,77 @@ export default function AssociatesPage() {
               <label className="block text-xs font-medium text-slate-500 mb-1">Specialties (comma-separated)</label>
               <input name="specialties" defaultValue={editing?.specialties?.join(', ') || ''} placeholder="Human Factors, AI Integration, Patient Safety" className="admin-input w-full" />
             </div>
+
+            {/* Credential Manager */}
+            <div className="border border-white/10 rounded-lg p-4 mt-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-white">Credentials</h3>
+                <button type="button" onClick={addCredential} className="flex items-center gap-1 text-xs text-[#c9944a] hover:text-[#d4a85c]">
+                  <Plus size={14} /> Add Credential
+                </button>
+              </div>
+
+              {credentials.length === 0 ? (
+                <p className="text-xs text-slate-600">No credentials. Click &quot;Add Credential&quot; to start.</p>
+              ) : (
+                <div className="space-y-2">
+                  {credentials.map((cred, idx) => (
+                    <div key={cred.id} className="flex items-center gap-2 bg-white/[0.02] rounded-lg p-2">
+                      <div className="flex flex-col gap-0.5">
+                        <button type="button" onClick={() => moveCredential(idx, -1)} disabled={idx === 0}
+                          className="text-slate-600 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"><ChevronUp size={12} /></button>
+                        <button type="button" onClick={() => moveCredential(idx, 1)} disabled={idx === credentials.length - 1}
+                          className="text-slate-600 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"><ChevronDown size={12} /></button>
+                      </div>
+                      <input
+                        value={cred.label}
+                        onChange={e => updateCredential(cred.id, 'label', e.target.value)}
+                        placeholder="Credential label..."
+                        className="admin-input flex-1 text-xs py-1.5"
+                      />
+                      <select
+                        value={cred.category}
+                        onChange={e => updateCredential(cred.id, 'category', e.target.value)}
+                        className="admin-input w-32 text-xs py-1.5"
+                      >
+                        <option value="academic">Academic</option>
+                        <option value="professional">Professional</option>
+                        <option value="award">Award</option>
+                        <option value="certification">Certification</option>
+                      </select>
+                      <input
+                        type="number"
+                        value={cred.year || ''}
+                        onChange={e => updateCredential(cred.id, 'year', e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="Year"
+                        className="admin-input w-20 text-xs py-1.5"
+                      />
+                      <button type="button" onClick={() => removeCredential(cred.id)} className="text-slate-600 hover:text-red-400">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Live preview */}
+              {credentials.filter(c => c.label.trim()).length > 0 && (
+                <div className="mt-4 pt-3 border-t border-white/5">
+                  <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-2">Preview</p>
+                  <CredentialPreview credentials={credentials.filter(c => c.label.trim())} />
+                </div>
+              )}
+            </div>
+
             <div className="flex items-center gap-2">
               <input type="checkbox" name="is_active" id="is_active" defaultChecked={editing?.is_active ?? true} className="rounded" />
               <label htmlFor="is_active" className="text-sm text-slate-400">Active (visible on public site)</label>
             </div>
             <div className="flex gap-3">
-              <button type="submit" className="px-4 py-2 bg-[#06b6d4] text-white rounded-lg text-sm font-semibold hover:bg-[#0891b2]">
+              <button type="submit" className="px-4 py-2 bg-[#c9944a] text-white rounded-lg text-sm font-semibold hover:bg-[#b07d3a]">
                 {editing ? 'Update' : 'Create'} Associate
               </button>
-              <button type="button" onClick={() => { setShowForm(false); setEditing(null) }} className="px-4 py-2 text-slate-400 hover:text-white text-sm">
+              <button type="button" onClick={() => { setShowForm(false); setEditing(null); setCredentials([]) }} className="px-4 py-2 text-slate-400 hover:text-white text-sm">
                 Cancel
               </button>
             </div>
@@ -180,13 +299,15 @@ export default function AssociatesPage() {
                     {a.photo_url ? (
                       <img src={a.photo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400 font-semibold text-sm">
+                      <div className="w-10 h-10 rounded-full bg-[#c9944a]/20 flex items-center justify-center text-[#c9944a] font-semibold text-sm">
                         {a.name.split(' ').map(n => n[0]).join('')}
                       </div>
                     )}
                     <div>
                       <p className="text-sm font-medium text-white">{a.name}</p>
-                      {a.credentials && <p className="text-[10px] text-slate-500">{a.credentials}</p>}
+                      {Array.isArray(a.credentials) && a.credentials.length > 0 && (
+                        <p className="text-[10px] text-slate-500">{a.credentials.length} credential{a.credentials.length !== 1 ? 's' : ''}</p>
+                      )}
                     </div>
                   </div>
                 </td>
@@ -201,10 +322,10 @@ export default function AssociatesPage() {
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <a href={`/team/${a.slug}`} target="_blank" rel="noopener" className="text-slate-500 hover:text-cyan-400 transition-colors">
+                    <a href={`/team/${a.slug}`} target="_blank" rel="noopener" className="text-slate-500 hover:text-[#c9944a] transition-colors">
                       <ExternalLink size={14} />
                     </a>
-                    <button onClick={() => { setEditing(a); setShowForm(true) }} className="text-slate-500 hover:text-cyan-400 transition-colors">
+                    <button onClick={() => openForm(a)} className="text-slate-500 hover:text-[#c9944a] transition-colors">
                       <Pencil size={14} />
                     </button>
                     <button onClick={() => handleDelete(a.id)} className="text-slate-500 hover:text-red-400 transition-colors">

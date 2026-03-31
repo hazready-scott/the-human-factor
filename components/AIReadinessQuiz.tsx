@@ -1003,7 +1003,7 @@ const ResultsPage = ({
             cursor: "pointer",
           }}
         >
-          Book a Free Consultation
+          Book a Free Advisory Call
         </a>
         <p style={{ fontSize: 12, opacity: 0.7, marginTop: 16 }}>
           Powered by the ARIA Method — AI Readiness & Implementation Approach
@@ -1020,7 +1020,7 @@ const ResultsPage = ({
       >
         <p style={{ fontSize: 13, color: BRAND.colors.muted }}>
           This assessment is provided by <strong>The Human Factor</strong> — Human Factors & Systems
-          Design Engineering consulting.
+          Design Engineering advisory practice.
           <br />
           We help organizations implement AI that fits how people actually work.
         </p>
