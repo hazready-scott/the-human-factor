@@ -82,9 +82,9 @@ export default function Home() {
           alt="AI-powered systems integration across emergency services, healthcare, and public safety"
           className="absolute inset-0 w-full h-full object-cover object-center"
         />
-        {/* Dark gradient overlay for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0d1626]/95 via-[#0d1626]/80 to-[#0d1626]/40" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0d1626] via-transparent to-[#0d1626]/60" />
+        {/* Dark overlay for text readability — light enough to see the full image */}
+        <div className="absolute inset-0 bg-[#0d1626]/50" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0d1626] via-transparent to-[#0d1626]/40" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-32 grid lg:grid-cols-5 gap-12 items-center">
           <div className="lg:col-span-3">
