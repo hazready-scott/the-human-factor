@@ -1,13 +1,23 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, ExternalLink, ChevronUp, ChevronDown, X } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Plus, Pencil, Trash2, ExternalLink, ChevronUp, ChevronDown, X, Upload, ImageIcon } from 'lucide-react'
 
 interface Credential {
   id: string
   label: string
   category: 'academic' | 'professional' | 'award' | 'certification'
   year: number | null
+  is_visible: boolean
+}
+
+interface Publication {
+  id: string
+  year: number | null
+  name: string
+  doi: string
+  url: string
+  is_visible: boolean
 }
 
 interface Associate {
@@ -17,6 +27,7 @@ interface Associate {
   role: string
   title: string
   credentials: Credential[]
+  publications: Publication[]
   bio: string
   photo_url: string
   email: string
@@ -49,12 +60,104 @@ function CredentialPreview({ credentials }: { credentials: Credential[] }) {
   )
 }
 
+function PhotoUpload({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
+  const [error, setError] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const uploadFile = useCallback(async (file: File) => {
+    setError('')
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!allowed.includes(file.type)) {
+      setError('Use JPEG, PNG, WebP, or GIF.')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Max 2MB.')
+      return
+    }
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || 'Upload failed')
+        return
+      }
+      const { url } = await res.json()
+      onChange(url)
+    } catch {
+      setError('Upload failed')
+    } finally {
+      setUploading(false)
+    }
+  }, [onChange])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (file) uploadFile(file)
+  }, [uploadFile])
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) uploadFile(file)
+  }
+
+  return (
+    <div>
+      <label className="block text-xs font-medium text-slate-500 mb-1">Photo</label>
+      <div className="flex items-start gap-4">
+        {/* Preview */}
+        {value ? (
+          <img src={value} alt="Profile" className="w-20 h-20 rounded-full object-cover ring-2 ring-white/10 flex-shrink-0" />
+        ) : (
+          <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center flex-shrink-0 ring-2 ring-white/10">
+            <ImageIcon size={24} className="text-slate-600" />
+          </div>
+        )}
+
+        {/* Drop zone */}
+        <div
+          className={`flex-1 border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${
+            dragOver ? 'border-[#c9944a] bg-[#c9944a]/5' : 'border-white/10 hover:border-white/20'
+          }`}
+          onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          onClick={() => inputRef.current?.click()}
+        >
+          <input ref={inputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+          {uploading ? (
+            <p className="text-xs text-slate-400">Uploading...</p>
+          ) : (
+            <>
+              <Upload size={18} className="mx-auto text-slate-500 mb-1" />
+              <p className="text-xs text-slate-400">Drag & drop or click to upload</p>
+              <p className="text-[10px] text-slate-600 mt-1">JPEG, PNG, WebP, GIF — max 2MB</p>
+            </>
+          )}
+        </div>
+      </div>
+      {error && <p className="text-xs text-red-400 mt-1">{error}</p>}
+      {/* Hidden field for form submission */}
+      <input type="hidden" name="photo_url" value={value} />
+    </div>
+  )
+}
+
 export default function AssociatesPage() {
   const [associates, setAssociates] = useState<Associate[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<Associate | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [credentials, setCredentials] = useState<Credential[]>([])
+  const [publications, setPublications] = useState<Publication[]>([])
+  const [photoUrl, setPhotoUrl] = useState('')
 
   const fetchAssociates = async () => {
     const res = await fetch('/api/admin/associates')
@@ -67,32 +170,45 @@ export default function AssociatesPage() {
   const openForm = (associate?: Associate) => {
     setEditing(associate || null)
     setCredentials(associate?.credentials || [])
+    setPublications(associate?.publications || [])
+    setPhotoUrl(associate?.photo_url || '')
     setShowForm(true)
   }
 
+  // --- Credentials ---
   const addCredential = () => {
-    setCredentials(prev => [...prev, {
-      id: crypto.randomUUID(),
-      label: '',
-      category: 'professional',
-      year: null,
-    }])
+    setCredentials(prev => [...prev, { id: crypto.randomUUID(), label: '', category: 'professional', year: null, is_visible: true }])
   }
-
-  const updateCredential = (id: string, field: string, value: string | number | null) => {
+  const updateCredential = (id: string, field: string, value: string | number | boolean | null) => {
     setCredentials(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c))
   }
-
   const removeCredential = (id: string) => {
     setCredentials(prev => prev.filter(c => c.id !== id))
   }
-
   const moveCredential = (index: number, direction: -1 | 1) => {
-    const newCreds = [...credentials]
-    const newIndex = index + direction
-    if (newIndex < 0 || newIndex >= newCreds.length) return
-    ;[newCreds[index], newCreds[newIndex]] = [newCreds[newIndex], newCreds[index]]
-    setCredentials(newCreds)
+    const arr = [...credentials]
+    const ni = index + direction
+    if (ni < 0 || ni >= arr.length) return
+    ;[arr[index], arr[ni]] = [arr[ni], arr[index]]
+    setCredentials(arr)
+  }
+
+  // --- Publications ---
+  const addPublication = () => {
+    setPublications(prev => [...prev, { id: crypto.randomUUID(), year: null, name: '', doi: '', url: '', is_visible: true }])
+  }
+  const updatePublication = (id: string, field: string, value: string | number | boolean | null) => {
+    setPublications(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p))
+  }
+  const removePublication = (id: string) => {
+    setPublications(prev => prev.filter(p => p.id !== id))
+  }
+  const movePublication = (index: number, direction: -1 | 1) => {
+    const arr = [...publications]
+    const ni = index + direction
+    if (ni < 0 || ni >= arr.length) return
+    ;[arr[index], arr[ni]] = [arr[ni], arr[index]]
+    setPublications(arr)
   }
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -104,8 +220,9 @@ export default function AssociatesPage() {
       role: form.get('role'),
       title: form.get('title'),
       credentials: credentials.filter(c => c.label.trim()),
+      publications: publications.filter(p => p.name.trim()),
       bio: form.get('bio'),
-      photo_url: form.get('photo_url'),
+      photo_url: photoUrl,
       email: form.get('email'),
       phone: form.get('phone'),
       linkedin: form.get('linkedin'),
@@ -121,6 +238,8 @@ export default function AssociatesPage() {
       setShowForm(false)
       setEditing(null)
       setCredentials([])
+      setPublications([])
+      setPhotoUrl('')
       fetchAssociates()
     }
   }
@@ -173,10 +292,10 @@ export default function AssociatesPage() {
               <label className="block text-xs font-medium text-slate-500 mb-1">Bio</label>
               <textarea name="bio" defaultValue={editing?.bio || ''} rows={4} className="admin-input w-full resize-y" />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Photo URL</label>
-              <input name="photo_url" defaultValue={editing?.photo_url || ''} className="admin-input w-full" />
-            </div>
+
+            {/* Photo Upload */}
+            <PhotoUpload value={photoUrl} onChange={setPhotoUrl} />
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Email</label>
@@ -202,7 +321,7 @@ export default function AssociatesPage() {
               <input name="specialties" defaultValue={editing?.specialties?.join(', ') || ''} placeholder="Human Factors, AI Integration, Patient Safety" className="admin-input w-full" />
             </div>
 
-            {/* Credential Manager */}
+            {/* ===== Credential Manager ===== */}
             <div className="border border-white/10 rounded-lg p-4 mt-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-white">Credentials</h3>
@@ -215,24 +334,40 @@ export default function AssociatesPage() {
                 <p className="text-xs text-slate-600">No credentials. Click &quot;Add Credential&quot; to start.</p>
               ) : (
                 <div className="space-y-2">
+                  {/* Column headers */}
+                  <div className="flex items-center gap-2 px-2 text-[10px] text-slate-600 uppercase tracking-wider">
+                    <div className="w-[28px]" />
+                    <div className="w-[18px] flex-shrink-0 text-center">Vis</div>
+                    <div className="flex-1 min-w-0">Label</div>
+                    <div className="w-[100px] flex-shrink-0">Type</div>
+                    <div className="w-[60px] flex-shrink-0">Year</div>
+                    <div className="w-[20px]" />
+                  </div>
                   {credentials.map((cred, idx) => (
-                    <div key={cred.id} className="flex items-center gap-2 bg-white/[0.02] rounded-lg p-2">
-                      <div className="flex flex-col gap-0.5">
+                    <div key={cred.id} className={`flex items-center gap-2 rounded-lg p-2 ${cred.is_visible !== false ? 'bg-white/[0.02]' : 'bg-white/[0.01] opacity-50'}`}>
+                      <div className="flex flex-col gap-0.5 flex-shrink-0">
                         <button type="button" onClick={() => moveCredential(idx, -1)} disabled={idx === 0}
                           className="text-slate-600 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"><ChevronUp size={12} /></button>
                         <button type="button" onClick={() => moveCredential(idx, 1)} disabled={idx === credentials.length - 1}
                           className="text-slate-600 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"><ChevronDown size={12} /></button>
                       </div>
                       <input
+                        type="checkbox"
+                        checked={cred.is_visible !== false}
+                        onChange={e => updateCredential(cred.id, 'is_visible', e.target.checked)}
+                        className="rounded flex-shrink-0"
+                        title="Visible on public site"
+                      />
+                      <input
                         value={cred.label}
                         onChange={e => updateCredential(cred.id, 'label', e.target.value)}
                         placeholder="Credential label..."
-                        className="admin-input flex-1 text-xs py-1.5"
+                        className="admin-input flex-1 min-w-0 text-xs py-1.5"
                       />
                       <select
                         value={cred.category}
                         onChange={e => updateCredential(cred.id, 'category', e.target.value)}
-                        className="admin-input w-32 text-xs py-1.5"
+                        className="admin-input w-[100px] flex-shrink-0 text-xs py-1.5"
                       >
                         <option value="academic">Academic</option>
                         <option value="professional">Professional</option>
@@ -244,9 +379,9 @@ export default function AssociatesPage() {
                         value={cred.year || ''}
                         onChange={e => updateCredential(cred.id, 'year', e.target.value ? parseInt(e.target.value) : null)}
                         placeholder="Year"
-                        className="admin-input w-20 text-xs py-1.5"
+                        className="admin-input w-[60px] flex-shrink-0 text-xs py-1.5"
                       />
-                      <button type="button" onClick={() => removeCredential(cred.id)} className="text-slate-600 hover:text-red-400">
+                      <button type="button" onClick={() => removeCredential(cred.id)} className="text-slate-600 hover:text-red-400 flex-shrink-0">
                         <X size={14} />
                       </button>
                     </div>
@@ -258,7 +393,79 @@ export default function AssociatesPage() {
               {credentials.filter(c => c.label.trim()).length > 0 && (
                 <div className="mt-4 pt-3 border-t border-white/5">
                   <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-2">Preview</p>
-                  <CredentialPreview credentials={credentials.filter(c => c.label.trim())} />
+                  <CredentialPreview credentials={credentials.filter(c => c.label.trim() && c.is_visible !== false)} />
+                </div>
+              )}
+            </div>
+
+            {/* ===== Publications Manager ===== */}
+            <div className="border border-white/10 rounded-lg p-4 mt-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-white">Relevant Publications</h3>
+                <button type="button" onClick={addPublication} className="flex items-center gap-1 text-xs text-[#c9944a] hover:text-[#d4a85c]">
+                  <Plus size={14} /> Add Publication
+                </button>
+              </div>
+
+              {publications.length === 0 ? (
+                <p className="text-xs text-slate-600">No publications. Click &quot;Add Publication&quot; to start.</p>
+              ) : (
+                <div className="space-y-2">
+                  {/* Column headers */}
+                  <div className="flex items-center gap-2 px-2 text-[10px] text-slate-600 uppercase tracking-wider">
+                    <div className="w-[28px]" />
+                    <div className="w-[18px] flex-shrink-0 text-center">Vis</div>
+                    <div className="w-[60px] flex-shrink-0">Year</div>
+                    <div className="flex-1 min-w-0">Publication Name</div>
+                    <div className="w-[120px] flex-shrink-0">DOI</div>
+                    <div className="w-[120px] flex-shrink-0">URL</div>
+                    <div className="w-[20px]" />
+                  </div>
+                  {publications.map((pub, idx) => (
+                    <div key={pub.id} className={`flex items-center gap-2 rounded-lg p-2 ${pub.is_visible !== false ? 'bg-white/[0.02]' : 'bg-white/[0.01] opacity-50'}`}>
+                      <div className="flex flex-col gap-0.5 flex-shrink-0">
+                        <button type="button" onClick={() => movePublication(idx, -1)} disabled={idx === 0}
+                          className="text-slate-600 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"><ChevronUp size={12} /></button>
+                        <button type="button" onClick={() => movePublication(idx, 1)} disabled={idx === publications.length - 1}
+                          className="text-slate-600 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed"><ChevronDown size={12} /></button>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={pub.is_visible !== false}
+                        onChange={e => updatePublication(pub.id, 'is_visible', e.target.checked)}
+                        className="rounded flex-shrink-0"
+                        title="Visible on public site"
+                      />
+                      <input
+                        type="number"
+                        value={pub.year || ''}
+                        onChange={e => updatePublication(pub.id, 'year', e.target.value ? parseInt(e.target.value) : null)}
+                        placeholder="Year"
+                        className="admin-input w-[60px] flex-shrink-0 text-xs py-1.5"
+                      />
+                      <input
+                        value={pub.name}
+                        onChange={e => updatePublication(pub.id, 'name', e.target.value)}
+                        placeholder="Publication title..."
+                        className="admin-input flex-1 min-w-0 text-xs py-1.5"
+                      />
+                      <input
+                        value={pub.doi}
+                        onChange={e => updatePublication(pub.id, 'doi', e.target.value)}
+                        placeholder="10.xxxx/..."
+                        className="admin-input w-[120px] flex-shrink-0 text-xs py-1.5"
+                      />
+                      <input
+                        value={pub.url}
+                        onChange={e => updatePublication(pub.id, 'url', e.target.value)}
+                        placeholder="https://..."
+                        className="admin-input w-[120px] flex-shrink-0 text-xs py-1.5"
+                      />
+                      <button type="button" onClick={() => removePublication(pub.id)} className="text-slate-600 hover:text-red-400 flex-shrink-0">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -271,7 +478,7 @@ export default function AssociatesPage() {
               <button type="submit" className="px-4 py-2 bg-[#c9944a] text-white rounded-lg text-sm font-semibold hover:bg-[#b07d3a]">
                 {editing ? 'Update' : 'Create'} Associate
               </button>
-              <button type="button" onClick={() => { setShowForm(false); setEditing(null); setCredentials([]) }} className="px-4 py-2 text-slate-400 hover:text-white text-sm">
+              <button type="button" onClick={() => { setShowForm(false); setEditing(null); setCredentials([]); setPublications([]); setPhotoUrl('') }} className="px-4 py-2 text-slate-400 hover:text-white text-sm">
                 Cancel
               </button>
             </div>

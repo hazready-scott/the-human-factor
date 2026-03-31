@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import AssociateProfiles from '@/components/AssociateProfiles'
 import ContactForm from '@/components/ContactForm'
 
@@ -64,7 +65,7 @@ const specialties = [
   },
   {
     title: 'Healthcare Quality & EMS Systems',
-    desc: 'Paramedic service optimization, community paramedicine, quality improvement, patient safety systems, and health system integration. Grounded in healthcare quality science and human factors methodology.',
+    desc: 'Healthcare and Paramedic service optimization, community paramedicine, quality improvement, patient safety systems, and health system integration. Grounded in healthcare quality science and human factors methodology.',
   },
 ]
 
@@ -72,29 +73,43 @@ export default function Home() {
   return (
     <>
       {/* ===== HERO ===== */}
-      <section className="relative min-h-screen flex items-center justify-center text-white overflow-hidden">
-        <div className="absolute top-1/3 right-1/4 w-[500px] h-[500px] bg-brand-amber/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 left-1/3 w-[400px] h-[400px] bg-brand-amber/5 rounded-full blur-3xl" />
+      <section className="relative min-h-screen flex items-center text-white overflow-hidden">
+        {/* Background image */}
+        <Image
+          src="/images/hero-systems.jpg"
+          alt="AI-powered systems integration across emergency services, healthcare, and public safety"
+          fill
+          priority
+          className="object-cover object-center"
+          quality={90}
+        />
+        {/* Dark gradient overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0d1626]/95 via-[#0d1626]/80 to-[#0d1626]/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0d1626] via-transparent to-[#0d1626]/60" />
 
-        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
-          <div className="accent-bar mx-auto mb-8" />
-          <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
-            The Human Factor
-          </h1>
-          <p className="text-lg md:text-xl text-[#c9944a] font-medium max-w-2xl mx-auto mb-6">
-            Applied science. Better systems. AI strategy grounded in how people actually work.
-          </p>
-          <p className="text-base md:text-lg text-slate-400 max-w-2xl mx-auto mb-10">
-            Most AI implementations fail because they ignore the human element. We take a different approach. Grounded in human factors engineering, systems design, and decades of operational experience in emergency services and healthcare, The Human Factor helps organizations improve their organizational systems and adopt AI in ways that genuinely improve how people work, decide, and deliver.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/assessment" className="btn-primary text-lg px-8 py-4">
-              Take the AI Readiness Assessment
-            </Link>
-            <a href="#aria" className="btn-secondary text-lg px-8 py-4">
-              Learn about the ARIA Method &rarr;
-            </a>
+        <div className="relative z-10 max-w-7xl mx-auto px-6 py-32 grid lg:grid-cols-5 gap-12 items-center">
+          <div className="lg:col-span-3">
+            <div className="accent-bar mb-8" />
+            <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
+              The Human Factor
+            </h1>
+            <p className="text-lg md:text-xl text-[#c9944a] font-medium max-w-2xl mb-6">
+              Applied science. Better systems. AI strategy grounded in how people actually work.
+            </p>
+            <p className="text-base md:text-lg text-slate-300 max-w-2xl mb-10 leading-relaxed">
+              Most AI implementations fail because they ignore the human element. We take a different approach. Grounded in human factors engineering, systems design, and decades of operational experience in emergency services and healthcare, The Human Factor helps organizations improve their organizational systems and adopt AI in ways that genuinely improve how people work, decide, and deliver.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link href="/assessment" className="btn-primary text-lg px-8 py-4">
+                Take the AI Readiness Assessment
+              </Link>
+              <a href="#aria" className="btn-secondary text-lg px-8 py-4">
+                Learn about the ARIA Method &rarr;
+              </a>
+            </div>
           </div>
+          {/* Right side left intentionally transparent to reveal the hero image */}
+          <div className="hidden lg:block lg:col-span-2" />
         </div>
       </section>
 
@@ -230,7 +245,7 @@ export default function Home() {
           <h2 className="section-title">Meet HazReady</h2>
           <div className="accent-bar mx-auto mb-8" />
           <p className="text-slate-400 text-base leading-relaxed max-w-2xl mx-auto mb-8">
-            HazReady is our AI-powered emergency intelligence platform, built from the same research that drives our advisory practice. It helps fire departments, emergency management offices, and regional coordinators automate planning, manage resources, and coordinate across agencies. When we recommend AI during an ARIA engagement, HazReady is often part of the solution. It was designed to solve the exact problems our work identifies.
+            HazReady is our AI-powered emergency intelligence platform, built from the same research that drives our advisory practice. It helps fire departments, emergency management offices, and regional coordinators automate planning, manage resources, and coordinate across agencies. When we recommend AI during an ARIA engagement, HazReady is a shining example of solutions we can identify and implement. It was designed to solve the exact problems our work identifies.
           </p>
           <a
             href="https://hazready.ai"

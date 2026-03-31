@@ -6,6 +6,16 @@ export interface Credential {
   label: string
   category: 'academic' | 'professional' | 'award' | 'certification'
   year: number | null
+  is_visible?: boolean
+}
+
+export interface Publication {
+  id: string
+  year: number | null
+  name: string
+  doi: string
+  url: string
+  is_visible?: boolean
 }
 
 export interface Associate {
@@ -20,6 +30,7 @@ export interface Associate {
   linkedin?: string
   website?: string
   credentials: Credential[]
+  publications: Publication[]
   specialties: string[]
   is_active: boolean
   sort_order: number

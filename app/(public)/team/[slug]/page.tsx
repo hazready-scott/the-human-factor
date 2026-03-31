@@ -10,6 +10,16 @@ interface Credential {
   label: string
   category: 'academic' | 'professional' | 'award' | 'certification'
   year: number | null
+  is_visible?: boolean
+}
+
+interface Publication {
+  id: string
+  year: number | null
+  name: string
+  doi: string
+  url: string
+  is_visible?: boolean
 }
 
 const CATEGORY_STYLES: Record<string, string> = {
@@ -46,7 +56,8 @@ export default async function AssociateProfilePage({ params }: { params: { slug:
 
   if (!associate) notFound()
 
-  const credentials: Credential[] = Array.isArray(associate.credentials) ? associate.credentials : []
+  const credentials: Credential[] = (Array.isArray(associate.credentials) ? associate.credentials : []).filter((c: Credential) => c.is_visible !== false)
+  const publications: Publication[] = (Array.isArray(associate.publications) ? associate.publications : []).filter((p: Publication) => p.is_visible !== false)
 
   // Fetch upcoming events for this associate
   const { data: events } = await supabase
@@ -128,6 +139,37 @@ export default async function AssociateProfilePage({ params }: { params: { slug:
           {associate.bio && (
             <div className="mt-8">
               <p className="text-slate-400 leading-relaxed whitespace-pre-line">{associate.bio}</p>
+            </div>
+          )}
+
+          {/* Publications */}
+          {publications.length > 0 && (
+            <div className="mt-12">
+              <h2 className="text-lg font-semibold text-white mb-4">Relevant Publications</h2>
+              <div className="space-y-3">
+                {publications.map(pub => (
+                  <div key={pub.id} className="flex items-start gap-4 p-4 rounded-xl border border-white/10 bg-white/[0.02]">
+                    {pub.year && (
+                      <div className="flex-shrink-0 text-sm font-semibold text-slate-500 w-12 pt-0.5">{pub.year}</div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-slate-300 leading-relaxed">{pub.name}</p>
+                      <div className="flex flex-wrap gap-3 mt-1.5">
+                        {pub.doi && (
+                          <a href={`https://doi.org/${pub.doi}`} target="_blank" rel="noopener noreferrer" className="text-xs text-[#c9944a] hover:text-[#d4a85c] transition-colors">
+                            DOI: {pub.doi}
+                          </a>
+                        )}
+                        {pub.url && (
+                          <a href={pub.url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#c9944a] hover:text-[#d4a85c] transition-colors">
+                            View Publication &rarr;
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
