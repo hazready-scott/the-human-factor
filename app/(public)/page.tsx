@@ -1,7 +1,8 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import AssociateProfiles from '@/components/AssociateProfiles'
 import ContactForm from '@/components/ContactForm'
+
+const HERO_IMAGE = process.env.NEXT_PUBLIC_HERO_IMAGE_URL || '/images/hero-systems.jpg'
 
 const ariaPhases = [
   {
@@ -75,13 +76,11 @@ export default function Home() {
       {/* ===== HERO ===== */}
       <section className="relative min-h-screen flex items-center text-white overflow-hidden">
         {/* Background image */}
-        <Image
-          src="/images/hero-systems.jpg"
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={HERO_IMAGE}
           alt="AI-powered systems integration across emergency services, healthcare, and public safety"
-          fill
-          priority
-          className="object-cover object-center"
-          quality={90}
+          className="absolute inset-0 w-full h-full object-cover object-center"
         />
         {/* Dark gradient overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#0d1626]/95 via-[#0d1626]/80 to-[#0d1626]/40" />

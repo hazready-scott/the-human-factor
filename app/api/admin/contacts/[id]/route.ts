@@ -48,6 +48,11 @@ export async function PATCH(
   if (body.email !== undefined) updates.email = body.email
   if (body.organization !== undefined) updates.organization = body.organization
   if (body.phone !== undefined) updates.phone = body.phone
+  if (body.title !== undefined) updates.title = body.title
+  if (body.website !== undefined) updates.website = body.website
+  if (body.address !== undefined) updates.address = body.address
+  if (body.last_contacted_at !== undefined) updates.last_contacted_at = body.last_contacted_at
+  if (body.next_follow_up !== undefined) updates.next_follow_up = body.next_follow_up
 
   const { data, error } = await supabase
     .from('contacts')

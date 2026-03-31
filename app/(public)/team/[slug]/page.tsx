@@ -173,6 +173,21 @@ export default async function AssociateProfilePage({ params }: { params: { slug:
             </div>
           )}
 
+          {/* Booking Calendar */}
+          {associate.booking_url && (
+            <div className="mt-12">
+              <h2 className="text-lg font-semibold text-white mb-4">Book a Meeting</h2>
+              <div className="rounded-xl border border-white/10 overflow-hidden bg-white">
+                <iframe
+                  src={associate.booking_url}
+                  className="w-full border-0"
+                  style={{ height: '600px' }}
+                  title={`Book a meeting with ${associate.name}`}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Upcoming events */}
           {events && events.length > 0 && (
             <div className="mt-12">

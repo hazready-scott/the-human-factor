@@ -32,6 +32,7 @@ export interface Associate {
   credentials: Credential[]
   publications: Publication[]
   specialties: string[]
+  booking_url?: string
   is_active: boolean
   sort_order: number
 }

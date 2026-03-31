@@ -2,13 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, FileText, LogOut, Presentation, UserCircle, Calendar } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { LayoutDashboard, Users, FileText, LogOut, Presentation, UserCircle, Calendar, ClipboardCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 const links = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/contacts', label: 'Contacts', icon: Users },
+  { href: '/admin/contacts', label: 'Contacts', icon: Users, badge: 'contacts' as const },
+  { href: '/admin/assessments', label: 'Assessments', icon: ClipboardCheck },
   { href: '/admin/presentations', label: 'Presentations', icon: Presentation },
   { href: '/admin/articles', label: 'Articles', icon: FileText },
   { href: '/admin/associates', label: 'Associates', icon: UserCircle },
@@ -18,6 +20,22 @@ const links = [
 export default function AdminNav() {
   const pathname = usePathname()
   const router = useRouter()
+  const [newContactCount, setNewContactCount] = useState(0)
+
+  useEffect(() => {
+    const fetchNewCount = async () => {
+      try {
+        const res = await fetch('/api/admin/stats')
+        if (res.ok) {
+          const data = await res.json()
+          setNewContactCount(data.contacts?.byStatus?.new || 0)
+        }
+      } catch { /* silent */ }
+    }
+    fetchNewCount()
+    const interval = setInterval(fetchNewCount, 60000)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -36,18 +54,24 @@ export default function AdminNav() {
         {links.map((link) => {
           const isActive = pathname === link.href || (link.href !== '/admin' && pathname.startsWith(link.href))
           const Icon = link.icon
+          const badgeCount = link.badge === 'contacts' ? newContactCount : 0
           return (
             <Link
               key={link.href}
               href={link.href}
               className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-white/10 text-cyan-400 border-r-2 border-cyan-400'
+                  ? 'bg-white/10 text-[#c9944a] border-r-2 border-[#c9944a]'
                   : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
             >
               <Icon size={18} />
               {link.label}
+              {badgeCount > 0 && (
+                <span className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {badgeCount > 9 ? '9+' : badgeCount}
+                </span>
+              )}
             </Link>
           )
         })}
