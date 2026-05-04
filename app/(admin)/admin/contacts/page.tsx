@@ -11,6 +11,8 @@ interface Contact {
   source: string
   status: string
   created_at: string
+  event_id: string | null
+  event?: { id: string; slug: string; event_name: string | null; title: string } | null
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -134,7 +136,14 @@ export default function ContactsPage() {
                 <td className="px-4 py-3 font-medium text-slate-200">{c.name}</td>
                 <td className="px-4 py-3 text-slate-400">{c.email}</td>
                 <td className="px-4 py-3 text-slate-400">{c.organization || '—'}</td>
-                <td className="px-4 py-3"><span className="text-xs px-2 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>{SOURCE_LABELS[c.source] || c.source}</span></td>
+                <td className="px-4 py-3">
+                  <span className="text-xs px-2 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)' }}>{SOURCE_LABELS[c.source] || c.source}</span>
+                  {c.event && (
+                    <span className="ml-1 text-[10px] px-2 py-1 rounded-full bg-cyan-500/10 text-cyan-300" title={`From event: ${c.event.event_name || c.event.title}`}>
+                      /{c.event.slug}
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-3"><span className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${STATUS_COLORS[c.status] || ''}`}>{c.status}</span></td>
                 <td className="px-4 py-3 text-slate-500">{new Date(c.created_at).toLocaleDateString()}</td>
               </tr>

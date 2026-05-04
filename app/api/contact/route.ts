@@ -6,7 +6,7 @@ import { contactConfirmationEmail, contactNotificationEmail } from '@/lib/email/
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { name, email, organization, role, message } = body
+    const { name, email, organization, role, message, event_slug } = body
 
     if (!name || !email || !message) {
       return NextResponse.json({ error: 'Name, email, and message are required' }, { status: 400 })
@@ -20,6 +20,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
     }
 
+    let eventId: string | null = null
+    if (event_slug && typeof event_slug === 'string') {
+      const { data: ev } = await supabase
+        .from('events')
+        .select('id')
+        .eq('slug', event_slug)
+        .maybeSingle()
+      if (ev) eventId = ev.id
+    }
+
     const { data, error } = await supabase.from('contacts').insert({
       name,
       email,
@@ -28,6 +38,7 @@ export async function POST(request: Request) {
       message,
       source: 'contact_form',
       status: 'new',
+      event_id: eventId,
     }).select('id').single()
 
     if (error) {

@@ -1,11 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Calendar, MapPin } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
+import { Plus, Pencil, Trash2, MapPin, Upload, Lock, ExternalLink } from 'lucide-react'
+import EventQrPanel from '@/components/admin/EventQrPanel'
+import { suggestSlug, validateSlug } from '@/lib/events/slug'
 
 interface Event {
   id: string
   title: string
+  event_name: string | null
+  slug: string | null
+  slug_locked: boolean
   description: string
   event_type: string
   venue: string
@@ -20,19 +26,15 @@ interface Event {
   is_public: boolean
   status: string
   notes: string
+  hero_image_url: string | null
+  slides_pdf_url: string | null
+  slides_pdf_allow_download: boolean
   associate?: { id: string; name: string; slug: string }
   presentation?: { id: string; title: string; slug: string }
 }
 
-interface Associate {
-  id: string
-  name: string
-}
-
-interface Presentation {
-  id: string
-  title: string
-}
+interface Associate { id: string; name: string }
+interface Presentation { id: string; title: string }
 
 const EVENT_TYPES = [
   { value: 'presentation', label: 'Presentation' },
@@ -67,6 +69,21 @@ export default function EventsPage() {
   const [showForm, setShowForm] = useState(false)
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming')
 
+  // Controlled fields coordinated outside FormData
+  const [eventName, setEventName] = useState('')
+  const [slug, setSlug] = useState('')
+  const [slugTouched, setSlugTouched] = useState(false)
+  const [lockSlug, setLockSlug] = useState(true)
+  const [heroUrl, setHeroUrl] = useState('')
+  const [pdfUrl, setPdfUrl] = useState('')
+  const [allowDownload, setAllowDownload] = useState(true)
+  const [uploadingHero, setUploadingHero] = useState(false)
+  const [uploadingPdf, setUploadingPdf] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
+
+  const heroFileRef = useRef<HTMLInputElement | null>(null)
+  const pdfFileRef = useRef<HTMLInputElement | null>(null)
+
   const fetchAll = async () => {
     const [evRes, assocRes, presRes] = await Promise.all([
       fetch('/api/admin/events'),
@@ -84,11 +101,110 @@ export default function EventsPage() {
 
   useEffect(() => { fetchAll() }, [])
 
+  const openCreate = () => {
+    setEditing(null)
+    setEventName('')
+    setSlug('')
+    setSlugTouched(false)
+    setLockSlug(true)
+    setHeroUrl('')
+    setPdfUrl('')
+    setAllowDownload(true)
+    setFormError(null)
+    setShowForm(true)
+  }
+
+  const openEdit = (ev: Event) => {
+    setEditing(ev)
+    setEventName(ev.event_name || '')
+    setSlug(ev.slug || '')
+    setSlugTouched(true)
+    setLockSlug(ev.slug_locked ?? false)
+    setHeroUrl(ev.hero_image_url || '')
+    setPdfUrl(ev.slides_pdf_url || '')
+    setAllowDownload(ev.slides_pdf_allow_download ?? true)
+    setFormError(null)
+    setShowForm(true)
+  }
+
+  const closeForm = () => {
+    setShowForm(false)
+    setEditing(null)
+    setFormError(null)
+  }
+
+  const handleEventNameChange = (v: string) => {
+    setEventName(v)
+    if (!slugTouched && !editing?.slug_locked) {
+      setSlug(suggestSlug(v))
+    }
+  }
+
+  const handleSlugChange = (v: string) => {
+    setSlugTouched(true)
+    setSlug(v.toLowerCase().replace(/\s+/g, '-'))
+  }
+
+  // Slug input is editable unless the DB-side lock is set AND the user hasn't
+  // unchecked the lock toggle in this session.
+  const slugInputDisabled = !!editing?.slug_locked && lockSlug
+  const slugCheck = slug ? validateSlug(slug) : null
+
+  const handleHeroUpload = async (file: File) => {
+    setUploadingHero(true)
+    setFormError(null)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('kind', 'image')
+      fd.append('slug', slug || 'event')
+      const res = await fetch('/api/admin/events/upload', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Hero upload failed')
+      setHeroUrl(data.url)
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : 'Upload failed')
+    } finally {
+      setUploadingHero(false)
+    }
+  }
+
+  const handlePdfUpload = async (file: File) => {
+    setUploadingPdf(true)
+    setFormError(null)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('kind', 'pdf')
+      fd.append('slug', slug || 'event')
+      const res = await fetch('/api/admin/events/upload', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'PDF upload failed')
+      setPdfUrl(data.url)
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : 'Upload failed')
+    } finally {
+      setUploadingPdf(false)
+    }
+  }
+
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setFormError(null)
+
+    if (slug) {
+      const v = validateSlug(slug)
+      if (!v.ok) {
+        setFormError(v.reason)
+        return
+      }
+    }
+
     const form = new FormData(e.currentTarget)
     const body: Record<string, unknown> = {
       title: form.get('title'),
+      event_name: eventName || null,
+      slug: slug || null,
       description: form.get('description'),
       event_type: form.get('event_type'),
       venue: form.get('venue'),
@@ -103,15 +219,21 @@ export default function EventsPage() {
       is_public: form.get('is_public') === 'on',
       status: form.get('status'),
       notes: form.get('notes'),
+      hero_image_url: heroUrl || null,
+      slides_pdf_url: pdfUrl || null,
+      slides_pdf_allow_download: allowDownload,
+      slug_locked: lockSlug,
     }
 
     const url = editing ? `/api/admin/events/${editing.id}` : '/api/admin/events'
     const method = editing ? 'PATCH' : 'POST'
     const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     if (res.ok) {
-      setShowForm(false)
-      setEditing(null)
+      closeForm()
       fetchAll()
+    } else {
+      const err = await res.json().catch(() => ({}))
+      setFormError(err.error || 'Save failed')
     }
   }
 
@@ -133,14 +255,13 @@ export default function EventsPage() {
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold text-white">Events & Speaking</h1>
         <button
-          onClick={() => { setEditing(null); setShowForm(true) }}
+          onClick={openCreate}
           className="flex items-center gap-2 px-4 py-2 bg-[#06b6d4] text-white rounded-lg text-sm font-semibold hover:bg-[#0891b2] transition-colors"
         >
           <Plus size={16} /> Add Event
         </button>
       </div>
 
-      {/* Filter tabs */}
       <div className="flex gap-1 mb-6">
         {(['upcoming', 'past', 'all'] as const).map(f => (
           <button
@@ -157,9 +278,56 @@ export default function EventsPage() {
         <div className="admin-card p-6 mb-8">
           <h2 className="text-lg font-semibold text-white mb-4">{editing ? 'Edit' : 'Add'} Event</h2>
           <form onSubmit={handleSave} className="space-y-4">
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Title *</label>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Event Name *</label>
+                <input
+                  value={eventName}
+                  onChange={e => handleEventNameChange(e.target.value)}
+                  required
+                  placeholder="e.g. CRHNet 2026 Conference"
+                  className="admin-input w-full"
+                />
+                <p className="text-[11px] text-slate-600 mt-1">Conference or gathering name. Used for the slug.</p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1 flex items-center gap-1">
+                  Slug *
+                  {lockSlug && <Lock size={10} className="text-amber-400" />}
+                </label>
+                <div className="flex">
+                  <span className="inline-flex items-center px-2 text-xs text-slate-500 bg-black/40 border border-r-0 border-white/10 rounded-l-lg">/</span>
+                  <input
+                    value={slug}
+                    onChange={e => handleSlugChange(e.target.value)}
+                    required
+                    disabled={slugInputDisabled}
+                    placeholder="crhnet2026"
+                    className="admin-input w-full rounded-l-none disabled:opacity-60"
+                  />
+                </div>
+                <div className="mt-2 flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    id="lock_slug"
+                    checked={lockSlug}
+                    onChange={e => setLockSlug(e.target.checked)}
+                    className="rounded mt-0.5"
+                  />
+                  <label htmlFor="lock_slug" className="text-[11px] text-slate-400 leading-snug">
+                    Lock URL after save
+                    <span className="text-slate-600"> — prevents accidental renames once the QR is on slides. Uncheck to rename.</span>
+                  </label>
+                </div>
+                {!slugInputDisabled && slugCheck && !slugCheck.ok && <p className="text-[11px] text-red-400 mt-1">{slugCheck.reason}</p>}
+                {!slugInputDisabled && slug && slugCheck?.ok && <p className="text-[11px] text-slate-600 mt-1">Public URL: /{slug}</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">Talk Title *</label>
                 <input name="title" defaultValue={editing?.title || ''} required className="admin-input w-full" />
               </div>
               <div>
@@ -169,10 +337,12 @@ export default function EventsPage() {
                 </select>
               </div>
             </div>
+
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Description</label>
               <textarea name="description" defaultValue={editing?.description || ''} rows={3} className="admin-input w-full resize-y" />
             </div>
+
             <div className="grid grid-cols-4 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Venue</label>
@@ -191,6 +361,7 @@ export default function EventsPage() {
                 <input name="country" defaultValue={editing?.country || 'Canada'} className="admin-input w-full" />
               </div>
             </div>
+
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Start Date *</label>
@@ -207,6 +378,7 @@ export default function EventsPage() {
                 </select>
               </div>
             </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-500 mb-1">Presenter</label>
@@ -223,23 +395,113 @@ export default function EventsPage() {
                 </select>
               </div>
             </div>
+
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">External URL</label>
               <input name="external_url" defaultValue={editing?.external_url || ''} placeholder="https://..." className="admin-input w-full" />
             </div>
+
+            {/* Hero image */}
+            <div className="border-t border-white/5 pt-4">
+              <label className="block text-xs font-medium text-slate-500 mb-2">Landing Page Hero Image</label>
+              {heroUrl && (
+                <div className="relative w-full max-w-md aspect-[16/9] mb-2 rounded-lg overflow-hidden bg-black/40">
+                  <Image src={heroUrl} alt="Event hero" fill className="object-cover" unoptimized />
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2 items-center">
+                <input
+                  ref={heroFileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleHeroUpload(f) }}
+                />
+                <button
+                  type="button"
+                  onClick={() => heroFileRef.current?.click()}
+                  disabled={uploadingHero}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-slate-200 rounded text-xs border border-white/10 disabled:opacity-50"
+                >
+                  <Upload size={12} /> {uploadingHero ? 'Uploading...' : (heroUrl ? 'Replace image' : 'Upload image')}
+                </button>
+                {heroUrl && (
+                  <button type="button" onClick={() => setHeroUrl('')} className="px-2 py-1.5 text-xs text-slate-500 hover:text-red-400">Remove</button>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-600 mt-1">Falls back to the site default in Settings if not set.</p>
+            </div>
+
+            {/* PDF slides */}
+            <div className="border-t border-white/5 pt-4">
+              <label className="block text-xs font-medium text-slate-500 mb-2">Slides PDF (optional, max 50MB)</label>
+              {pdfUrl && (
+                <div className="flex items-center gap-2 mb-2 text-xs">
+                  <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 break-all">
+                    <ExternalLink size={11} /> View uploaded PDF
+                  </a>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2 items-center">
+                <input
+                  ref={pdfFileRef}
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handlePdfUpload(f) }}
+                />
+                <button
+                  type="button"
+                  onClick={() => pdfFileRef.current?.click()}
+                  disabled={uploadingPdf}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-slate-200 rounded text-xs border border-white/10 disabled:opacity-50"
+                >
+                  <Upload size={12} /> {uploadingPdf ? 'Uploading...' : (pdfUrl ? 'Replace PDF' : 'Upload PDF')}
+                </button>
+                {pdfUrl && (
+                  <button type="button" onClick={() => setPdfUrl('')} className="px-2 py-1.5 text-xs text-slate-500 hover:text-red-400">Remove</button>
+                )}
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="allow_download"
+                  checked={allowDownload}
+                  onChange={e => setAllowDownload(e.target.checked)}
+                  className="rounded"
+                />
+                <label htmlFor="allow_download" className="text-xs text-slate-400">
+                  Allow attendees to download the PDF
+                </label>
+              </div>
+              <p className="text-[11px] text-slate-600 mt-1">When unchecked, the PDF is embedded for viewing only (best-effort — determined viewers can still grab the URL).</p>
+            </div>
+
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Notes (internal)</label>
               <textarea name="notes" defaultValue={editing?.notes || ''} rows={2} className="admin-input w-full resize-y" />
             </div>
+
             <div className="flex items-center gap-2">
               <input type="checkbox" name="is_public" id="is_public" defaultChecked={editing?.is_public ?? true} className="rounded" />
               <label htmlFor="is_public" className="text-sm text-slate-400">Visible on public site</label>
             </div>
+
+            {/* QR + URL panel — only when slug is set */}
+            {slug && slugCheck?.ok && (
+              <div className="border-t border-white/5 pt-4">
+                <p className="text-xs font-medium text-slate-500 mb-2">Public URL & QR Code</p>
+                <EventQrPanel slug={slug} />
+              </div>
+            )}
+
+            {formError && <p className="text-sm text-red-400">{formError}</p>}
+
             <div className="flex gap-3">
               <button type="submit" className="px-4 py-2 bg-[#06b6d4] text-white rounded-lg text-sm font-semibold hover:bg-[#0891b2]">
                 {editing ? 'Update' : 'Create'} Event
               </button>
-              <button type="button" onClick={() => { setShowForm(false); setEditing(null) }} className="px-4 py-2 text-slate-400 hover:text-white text-sm">
+              <button type="button" onClick={closeForm} className="px-4 py-2 text-slate-400 hover:text-white text-sm">
                 Cancel
               </button>
             </div>
@@ -247,7 +509,6 @@ export default function EventsPage() {
         </div>
       )}
 
-      {/* Events list */}
       <div className="space-y-3">
         {filteredEvents.length === 0 ? (
           <div className="admin-card p-12 text-center text-slate-600">No {filter} events</div>
@@ -258,13 +519,27 @@ export default function EventsPage() {
               <div className="text-xs text-slate-500 uppercase">{new Date(ev.start_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</div>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-sm font-semibold text-white truncate">{ev.title}</h3>
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <h3 className="text-sm font-semibold text-white truncate">{ev.event_name || ev.title}</h3>
                 <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${STATUS_COLORS[ev.status] || 'bg-slate-500/20 text-slate-400'}`}>
                   {ev.status}
                 </span>
                 <span className="px-2 py-0.5 rounded text-[10px] bg-white/5 text-slate-500">{ev.event_type}</span>
+                {ev.slug && (
+                  <a
+                    href={`/${ev.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2 py-0.5 rounded text-[10px] bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 flex items-center gap-1"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    /{ev.slug} <ExternalLink size={9} />
+                  </a>
+                )}
               </div>
+              {ev.event_name && ev.title && ev.event_name !== ev.title && (
+                <p className="text-xs text-slate-500 mb-0.5 truncate">Talk: {ev.title}</p>
+              )}
               {(ev.venue || ev.city) && (
                 <p className="text-xs text-slate-500 flex items-center gap-1">
                   <MapPin size={10} />
@@ -275,7 +550,7 @@ export default function EventsPage() {
               {ev.presentation && <p className="text-xs text-slate-600 mt-0.5">Deck: {ev.presentation.title}</p>}
             </div>
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => { setEditing(ev); setShowForm(true) }} className="text-slate-500 hover:text-cyan-400 transition-colors">
+              <button onClick={() => openEdit(ev)} className="text-slate-500 hover:text-cyan-400 transition-colors">
                 <Pencil size={14} />
               </button>
               <button onClick={() => handleDelete(ev.id)} className="text-slate-500 hover:text-red-400 transition-colors">
