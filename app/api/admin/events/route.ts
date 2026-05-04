@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { validateSlug } from '@/lib/events/slug'
 
 export async function GET(request: Request) {
   const supabase = createClient()
@@ -29,6 +30,24 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
+
+  if (body.slug) {
+    const v = validateSlug(body.slug)
+    if (!v.ok) return NextResponse.json({ error: v.reason }, { status: 400 })
+
+    const { data: existing } = await supabase
+      .from('events')
+      .select('id')
+      .eq('slug', body.slug)
+      .maybeSingle()
+    if (existing) return NextResponse.json({ error: `Slug "${body.slug}" is already taken.` }, { status: 409 })
+  }
+
+  // Default: lock slug for new public events. Explicit slug_locked in body wins.
+  if (body.slug_locked === undefined && body.slug && body.is_public) {
+    body.slug_locked = true
+  }
+
   const { data, error } = await supabase
     .from('events')
     .insert(body)

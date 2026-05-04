@@ -10,6 +10,7 @@ export async function POST(request: Request) {
       name, email, org_name, industry, org_size, role,
       overall_score, dimension_scores, raw_intake, raw_answers,
       utm_source, utm_medium, utm_campaign, referrer,
+      event_slug,
     } = body
 
     if (!email || !name) {
@@ -51,19 +52,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to save assessment' }, { status: 500 })
     }
 
+    // Resolve event attribution from slug, if provided
+    let eventId: string | null = null
+    if (event_slug && typeof event_slug === 'string') {
+      const { data: ev } = await supabase
+        .from('events')
+        .select('id')
+        .eq('slug', event_slug)
+        .maybeSingle()
+      if (ev) eventId = ev.id
+    }
+
     // Upsert contact
     const { data: existingContact } = await supabase
       .from('contacts')
-      .select('id')
+      .select('id, event_id')
       .eq('email', email)
       .single()
 
     if (existingContact) {
-      await supabase.from('contacts').update({
+      const update: Record<string, unknown> = {
         assessment_id: assessment.id,
         name,
         organization: org_name || null,
-      }).eq('id', existingContact.id)
+      }
+      // Only set event_id if we have one and the contact doesn't already have one
+      // (don't overwrite an earlier event attribution).
+      if (eventId && !existingContact.event_id) update.event_id = eventId
+      await supabase.from('contacts').update(update).eq('id', existingContact.id)
     } else {
       await supabase.from('contacts').insert({
         name,
@@ -72,6 +88,7 @@ export async function POST(request: Request) {
         source: 'quiz_submission',
         status: 'new',
         assessment_id: assessment.id,
+        event_id: eventId,
         utm_source: utm_source || null,
         utm_medium: utm_medium || null,
         utm_campaign: utm_campaign || null,

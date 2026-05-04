@@ -5,7 +5,11 @@ import { useState } from 'react'
 const inputClass = "w-full px-4 py-3 rounded-lg text-sm text-slate-200 transition-colors placeholder:text-slate-600 focus:outline-none focus:border-[#c9944a]"
 const inputStyle = { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }
 
-export default function ContactForm() {
+interface ContactFormProps {
+  eventSlug?: string
+}
+
+export default function ContactForm({ eventSlug }: ContactFormProps = {}) {
   const [form, setForm] = useState({ name: '', email: '', organization: '', role: '', message: '' })
   const [state, setState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
 
@@ -13,7 +17,8 @@ export default function ContactForm() {
     e.preventDefault()
     setState('submitting')
     try {
-      const res = await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+      const payload = eventSlug ? { ...form, event_slug: eventSlug } : form
+      const res = await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       setState(res.ok ? 'success' : 'error')
     } catch { setState('error') }
   }

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { LayoutDashboard, Users, FileText, LogOut, Presentation, UserCircle, Calendar, ClipboardCheck } from 'lucide-react'
+import { LayoutDashboard, Users, FileText, LogOut, Presentation, UserCircle, Calendar, ClipboardCheck, Settings } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -15,6 +15,7 @@ const links = [
   { href: '/admin/articles', label: 'Articles', icon: FileText },
   { href: '/admin/associates', label: 'Associates', icon: UserCircle },
   { href: '/admin/events', label: 'Events', icon: Calendar },
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
 export default function AdminNav() {

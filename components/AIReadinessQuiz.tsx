@@ -1143,6 +1143,7 @@ export default function AIReadinessQuiz() {
       utm_source: params.get("utm_source") || null,
       utm_medium: params.get("utm_medium") || null,
       utm_campaign: params.get("utm_campaign") || null,
+      event_slug: params.get("event") || null,
       referrer: typeof document !== "undefined" ? document.referrer || null : null,
     });
 

@@ -13,7 +13,7 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from('contacts')
-    .select('*')
+    .select('*, event:events(id, slug, event_name, title)')
     .order('created_at', { ascending: false })
 
   if (search) {
