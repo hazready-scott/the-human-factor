@@ -30,7 +30,7 @@ type EventRow = {
   slides_pdf_url: string | null
   slides_pdf_allow_download: boolean
   external_url: string | null
-  associate: { id: string; name: string; slug: string; photo_url: string | null; title: string | null } | null
+  associate: { id: string; name: string; slug: string; photo_url: string | null; title: string | null; booking_url: string | null } | null
   presentation: { id: string; title: string; slug: string } | null
 }
 
@@ -39,7 +39,7 @@ async function loadEvent(slug: string): Promise<EventRow | null> {
   const supabase = createClient()
   const { data } = await supabase
     .from('events')
-    .select('id, slug, title, event_name, description, event_type, venue, city, province_state, country, start_date, end_date, timezone, is_public, hero_image_url, slides_pdf_url, slides_pdf_allow_download, external_url, associate:associates(id, name, slug, photo_url, title), presentation:presentations(id, title, slug)')
+    .select('id, slug, title, event_name, description, event_type, venue, city, province_state, country, start_date, end_date, timezone, is_public, hero_image_url, slides_pdf_url, slides_pdf_allow_download, external_url, associate:associates(id, name, slug, photo_url, title, booking_url), presentation:presentations(id, title, slug)')
     .eq('slug', slug)
     .eq('is_public', true)
     .maybeSingle()
@@ -129,17 +129,28 @@ export default async function EventLandingPage({ params }: { params: { slug: str
           )}
 
           {event.associate && (
-            <div className="card mb-12 flex items-start gap-4">
+            <div className="card mb-12 flex flex-wrap items-center gap-4">
               {event.associate.photo_url && (
                 <div className="relative w-20 h-20 rounded-full overflow-hidden flex-shrink-0">
                   <Image src={event.associate.photo_url} alt={event.associate.name} fill className="object-cover" unoptimized />
                 </div>
               )}
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-xs uppercase tracking-widest text-slate-500 mb-1">Presented by</p>
                 <h3 className="text-xl font-bold text-white">{event.associate.name}</h3>
                 {event.associate.title && <p className="text-sm text-slate-400 mt-1">{event.associate.title}</p>}
               </div>
+              {event.associate.booking_url && (
+                <a
+                  href={event.associate.booking_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-secondary inline-flex items-center gap-2 flex-shrink-0"
+                >
+                  <Calendar size={14} />
+                  Schedule a Conversation
+                </a>
+              )}
             </div>
           )}
 
